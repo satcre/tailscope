@@ -169,5 +169,21 @@ RSpec.describe Tailscope::CodeAnalyzer do
         expect(issue.raw_ids).to eq([])
       end
     end
+
+    it "generates a fingerprint for each issue" do
+      issues = described_class.analyze_all(source_root: fixtures_root)
+      issues.each do |issue|
+        expect(issue.fingerprint).to be_a(String)
+        expect(issue.fingerprint.length).to eq(16)
+      end
+    end
+
+    it "generates deterministic fingerprints" do
+      issues1 = described_class.analyze_all(source_root: fixtures_root)
+      issues2 = described_class.analyze_all(source_root: fixtures_root)
+      fps1 = issues1.map(&:fingerprint).sort
+      fps2 = issues2.map(&:fingerprint).sort
+      expect(fps1).to eq(fps2)
+    end
   end
 end

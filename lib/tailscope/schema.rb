@@ -51,7 +51,7 @@ module Tailscope
           recorded_at TEXT NOT NULL DEFAULT (datetime('now'))
         )
       SQL
-      tailscope_breakpoints: <<~SQL
+      tailscope_breakpoints: <<~SQL,
         CREATE TABLE IF NOT EXISTS tailscope_breakpoints (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           file TEXT NOT NULL,
@@ -60,6 +60,15 @@ module Tailscope
           enabled INTEGER NOT NULL DEFAULT 1,
           created_at TEXT NOT NULL DEFAULT (datetime('now')),
           UNIQUE(file, line)
+        )
+      SQL
+      tailscope_ignored_issues: <<~SQL
+        CREATE TABLE IF NOT EXISTS tailscope_ignored_issues (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          fingerprint TEXT NOT NULL UNIQUE,
+          issue_title TEXT,
+          issue_type TEXT,
+          created_at TEXT NOT NULL DEFAULT (datetime('now'))
         )
       SQL
     }.freeze
@@ -72,6 +81,7 @@ module Tailscope
       "CREATE INDEX IF NOT EXISTS idx_requests_request_id ON tailscope_requests(request_id)",
       "CREATE INDEX IF NOT EXISTS idx_errors_recorded_at ON tailscope_errors(recorded_at)",
       "CREATE INDEX IF NOT EXISTS idx_errors_request_id ON tailscope_errors(request_id)",
+      "CREATE INDEX IF NOT EXISTS idx_ignored_fingerprint ON tailscope_ignored_issues(fingerprint)",
     ].freeze
 
     class << self

@@ -127,6 +127,35 @@ module Tailscope
         db.execute("DELETE FROM tailscope_errors WHERE recorded_at < ?", [cutoff])
       end
 
+      # --- Ignored Issues ---
+
+      def ignore_issue(fingerprint:, title: nil, issue_type: nil)
+        Tailscope::Database.connection.execute(
+          "INSERT OR IGNORE INTO tailscope_ignored_issues (fingerprint, issue_title, issue_type) VALUES (?, ?, ?)",
+          [fingerprint, title, issue_type]
+        )
+      end
+
+      def unignore_issue(fingerprint)
+        Tailscope::Database.connection.execute(
+          "DELETE FROM tailscope_ignored_issues WHERE fingerprint = ?",
+          [fingerprint]
+        )
+      end
+
+      def ignored_fingerprints
+        rows = Tailscope::Database.connection.execute(
+          "SELECT fingerprint FROM tailscope_ignored_issues"
+        )
+        Set.new(rows.map { |r| r["fingerprint"] })
+      end
+
+      def ignored_issues_list
+        Tailscope::Database.connection.execute(
+          "SELECT * FROM tailscope_ignored_issues ORDER BY created_at DESC"
+        )
+      end
+
       def recent_events(limit: 10)
         db = Tailscope::Database.connection
         queries = db.execute(

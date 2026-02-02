@@ -6,43 +6,55 @@
   info_count     = @issues.count { |i| i.severity == :info }
 %>
 
-<div class="grid grid-cols-3 gap-4 mb-6">
-  <div class="bg-white rounded-lg shadow p-4 text-center">
-    <div class="text-3xl font-bold text-red-600"><%= critical_count %></div>
-    <div class="text-sm text-gray-500">Critical</div>
+<% unless @tab == :ignored %>
+  <div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow p-4 text-center">
+      <div class="text-3xl font-bold text-red-600"><%= critical_count %></div>
+      <div class="text-sm text-gray-500">Critical</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4 text-center">
+      <div class="text-3xl font-bold text-yellow-600"><%= warning_count %></div>
+      <div class="text-sm text-gray-500">Warning</div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4 text-center">
+      <div class="text-3xl font-bold text-blue-600"><%= info_count %></div>
+      <div class="text-sm text-gray-500">Info</div>
+    </div>
   </div>
-  <div class="bg-white rounded-lg shadow p-4 text-center">
-    <div class="text-3xl font-bold text-yellow-600"><%= warning_count %></div>
-    <div class="text-sm text-gray-500">Warning</div>
-  </div>
-  <div class="bg-white rounded-lg shadow p-4 text-center">
-    <div class="text-3xl font-bold text-blue-600"><%= info_count %></div>
-    <div class="text-sm text-gray-500">Info</div>
-  </div>
-</div>
+<% end %>
 
 <div class="flex gap-2 mb-6">
   <a href="<%= tailscope.root_path %>"
-     class="px-3 py-1 text-sm rounded <%= @filter.blank? ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700' %>">
-    All (<%= @issues.size %>)
+     class="px-3 py-1 text-sm rounded <%= @filter.blank? && @tab != :ignored ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700' %>">
+    All (<%= @tab == :ignored ? @issues.size : @issues.size %>)
   </a>
-  <a href="<%= tailscope.root_path(severity: :critical) %>"
-     class="px-3 py-1 text-sm rounded <%= @filter == :critical ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700' %>">
-    Critical (<%= critical_count %>)
-  </a>
-  <a href="<%= tailscope.root_path(severity: :warning) %>"
-     class="px-3 py-1 text-sm rounded <%= @filter == :warning ? 'bg-yellow-600 text-white' : 'bg-gray-200 text-gray-700' %>">
-    Warning (<%= warning_count %>)
-  </a>
-  <a href="<%= tailscope.root_path(severity: :info) %>"
-     class="px-3 py-1 text-sm rounded <%= @filter == :info ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700' %>">
-    Info (<%= info_count %>)
+  <% unless @tab == :ignored %>
+    <a href="<%= tailscope.root_path(severity: :critical) %>"
+       class="px-3 py-1 text-sm rounded <%= @filter == :critical ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700' %>">
+      Critical (<%= critical_count %>)
+    </a>
+    <a href="<%= tailscope.root_path(severity: :warning) %>"
+       class="px-3 py-1 text-sm rounded <%= @filter == :warning ? 'bg-yellow-600 text-white' : 'bg-gray-200 text-gray-700' %>">
+      Warning (<%= warning_count %>)
+    </a>
+    <a href="<%= tailscope.root_path(severity: :info) %>"
+       class="px-3 py-1 text-sm rounded <%= @filter == :info ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700' %>">
+      Info (<%= info_count %>)
+    </a>
+  <% end %>
+  <a href="<%= tailscope.root_path(tab: :ignored) %>"
+     class="px-3 py-1 text-sm rounded <%= @tab == :ignored ? 'bg-gray-600 text-white' : 'bg-gray-200 text-gray-700' %>">
+    Ignored (<%= @ignored_count %>)
   </a>
 </div>
 
 <% if @issues.empty? %>
   <div class="bg-white rounded-lg shadow p-8 text-center text-gray-400">
-    No issues detected. Browse your app to generate traffic.
+    <% if @tab == :ignored %>
+      No ignored issues. Issues you ignore will appear here.
+    <% else %>
+      No issues detected. Browse your app to generate traffic.
+    <% end %>
   </div>
 <% end %>
 
@@ -100,7 +112,25 @@
         <% if detail_path %>
           <a href="<%= detail_path %>" class="text-blue-600 hover:underline">View details &rarr;</a>
         <% end %>
-        <span class="text-xs text-gray-400"><%= time_ago_in_words_short(issue.latest_at) %></span>
+        <% if issue.latest_at %>
+          <span class="text-xs text-gray-400"><%= time_ago_in_words_short(issue.latest_at) %></span>
+        <% end %>
+
+        <% if @tab == :ignored %>
+          <form action="<%= tailscope.unignore_issue_path(fingerprint: issue.fingerprint) %>" method="post" class="ml-auto">
+            <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+            <button type="submit" class="px-2 py-1 text-xs rounded bg-gray-200 text-gray-600 hover:bg-gray-300">
+              Unignore
+            </button>
+          </form>
+        <% else %>
+          <form action="<%= tailscope.ignore_issue_path(fingerprint: issue.fingerprint) %>" method="post" class="ml-auto">
+            <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+            <button type="submit" class="px-2 py-1 text-xs rounded bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600">
+              Ignore
+            </button>
+          </form>
+        <% end %>
       </div>
     </div>
   <% end %>

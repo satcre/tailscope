@@ -4,6 +4,8 @@ Tailscope::Engine.routes.draw do
   root to: "issues#index"
 
   resources :issues, only: [:index]
+  post "issues/:fingerprint/ignore", to: "issues#ignore", as: :ignore_issue
+  post "issues/:fingerprint/unignore", to: "issues#unignore", as: :unignore_issue
   resources :queries, only: [:index, :show]
   resources :requests, only: [:index, :show]
   resources :errors, only: [:index, :show]

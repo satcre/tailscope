@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "digest"
+
 module Tailscope
   Issue = Struct.new(
     :severity,
@@ -15,6 +17,7 @@ module Tailscope
     :raw_ids,
     :raw_type,
     :metadata,
+    :fingerprint,
     keyword_init: true
   )
 
@@ -94,6 +97,7 @@ module Tailscope
               source_method: row["source_method"],
               controller: controller_ref,
             },
+            fingerprint: compute_fingerprint(:n_plus_one, row["source_file"], row["source_line"]),
           )
         end
       end
@@ -146,6 +150,7 @@ module Tailscope
               avg_duration_ms: avg,
               controller: controller_ref,
             },
+            fingerprint: compute_fingerprint(:slow_query, row["source_file"], row["source_line"]),
           )
         end
       end
@@ -185,6 +190,7 @@ module Tailscope
               request_path: row["request_path"],
               source_method: row["source_method"],
             },
+            fingerprint: compute_fingerprint(:error, row["exception_class"], row["source_file"], row["source_line"]),
           )
         end
       end
@@ -245,6 +251,7 @@ module Tailscope
               avg_view_ms: avg_view,
               avg_db_ms: avg_db,
             },
+            fingerprint: compute_fingerprint(:slow_request, row["controller"], row["action"]),
           )
         end
       end
@@ -260,6 +267,10 @@ module Tailscope
         return [] unless ids_str
 
         ids_str.split(",").map(&:to_i)
+      end
+
+      def compute_fingerprint(*parts)
+        Digest::SHA256.hexdigest(parts.map(&:to_s).join("|"))[0, 16]
       end
 
       def extract_association(sql)

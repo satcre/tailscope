@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "digest"
+
 module Tailscope
   module CodeAnalyzer
     class << self
@@ -460,6 +462,7 @@ module Tailscope
           raw_ids: [],
           raw_type: "code_smell",
           metadata: {},
+          fingerprint: Digest::SHA256.hexdigest("code_smell|#{title}|#{source_file}|#{source_line}")[0, 16],
         )
       end
 
