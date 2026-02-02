@@ -1,0 +1,23 @@
+<%
+  source_root = Tailscope.configuration.source_root
+  if file&.start_with?(source_root) && File.exist?(file)
+    lines = File.readlines(file)
+    start_line = [line - 10, 0].max
+    end_line = [line + 10, lines.size - 1].min
+    visible_lines = lines[start_line..end_line] || []
+%>
+<div class="mt-2">
+  <div class="text-xs text-gray-500 mb-1 font-mono"><%= file.sub(source_root + "/", "") %></div>
+  <div class="bg-gray-900 rounded overflow-x-auto">
+    <table class="text-sm font-mono w-full">
+      <% visible_lines.each_with_index do |code_line, idx| %>
+        <% line_num = start_line + idx + 1 %>
+        <tr class="<%= line_num == line ? 'code-highlight bg-yellow-900/30' : '' %>">
+          <td class="px-3 py-0.5 text-right text-gray-500 select-none w-12 border-r border-gray-700"><%= line_num %></td>
+          <td class="px-3 py-0.5 text-gray-300 whitespace-pre"><%= code_line.chomp %></td>
+        </tr>
+      <% end %>
+    </table>
+  </div>
+</div>
+<% end %>

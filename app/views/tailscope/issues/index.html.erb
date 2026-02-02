@@ -1,0 +1,107 @@
+<h1 class="text-2xl font-bold mb-6">Issues</h1>
+
+<%
+  critical_count = @issues.count { |i| i.severity == :critical }
+  warning_count  = @issues.count { |i| i.severity == :warning }
+  info_count     = @issues.count { |i| i.severity == :info }
+%>
+
+<div class="grid grid-cols-3 gap-4 mb-6">
+  <div class="bg-white rounded-lg shadow p-4 text-center">
+    <div class="text-3xl font-bold text-red-600"><%= critical_count %></div>
+    <div class="text-sm text-gray-500">Critical</div>
+  </div>
+  <div class="bg-white rounded-lg shadow p-4 text-center">
+    <div class="text-3xl font-bold text-yellow-600"><%= warning_count %></div>
+    <div class="text-sm text-gray-500">Warning</div>
+  </div>
+  <div class="bg-white rounded-lg shadow p-4 text-center">
+    <div class="text-3xl font-bold text-blue-600"><%= info_count %></div>
+    <div class="text-sm text-gray-500">Info</div>
+  </div>
+</div>
+
+<div class="flex gap-2 mb-6">
+  <a href="<%= tailscope.root_path %>"
+     class="px-3 py-1 text-sm rounded <%= @filter.blank? ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700' %>">
+    All (<%= @issues.size %>)
+  </a>
+  <a href="<%= tailscope.root_path(severity: :critical) %>"
+     class="px-3 py-1 text-sm rounded <%= @filter == :critical ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700' %>">
+    Critical (<%= critical_count %>)
+  </a>
+  <a href="<%= tailscope.root_path(severity: :warning) %>"
+     class="px-3 py-1 text-sm rounded <%= @filter == :warning ? 'bg-yellow-600 text-white' : 'bg-gray-200 text-gray-700' %>">
+    Warning (<%= warning_count %>)
+  </a>
+  <a href="<%= tailscope.root_path(severity: :info) %>"
+     class="px-3 py-1 text-sm rounded <%= @filter == :info ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700' %>">
+    Info (<%= info_count %>)
+  </a>
+</div>
+
+<% if @issues.empty? %>
+  <div class="bg-white rounded-lg shadow p-8 text-center text-gray-400">
+    No issues detected. Browse your app to generate traffic.
+  </div>
+<% end %>
+
+<div class="space-y-4">
+  <% @issues.each do |issue| %>
+    <div class="bg-white rounded-lg shadow p-4 border-l-4 <%= issue_border_class(issue.severity) %>">
+      <div class="flex items-start justify-between">
+        <div class="flex items-center gap-2">
+          <%= severity_badge(issue.severity) %>
+          <span class="font-semibold text-gray-900"><%= issue.title %></span>
+          <% if issue.type == :n_plus_one %>
+            <span class="inline-block px-2 py-0.5 text-xs font-medium rounded bg-purple-100 text-purple-800">N+1</span>
+          <% elsif issue.type == :slow_query %>
+            <span class="inline-block px-2 py-0.5 text-xs font-medium rounded bg-blue-100 text-blue-800">Query</span>
+          <% elsif issue.type == :slow_request %>
+            <span class="inline-block px-2 py-0.5 text-xs font-medium rounded bg-green-100 text-green-800">Request</span>
+          <% elsif issue.type == :code_smell %>
+            <span class="inline-block px-2 py-0.5 text-xs font-medium rounded bg-orange-100 text-orange-800">Code Smell</span>
+          <% end %>
+        </div>
+        <div class="text-right text-sm text-gray-500 whitespace-nowrap">
+          <%= issue.occurrences %> occurrence<%= issue.occurrences == 1 ? '' : 's' %>
+          <% if issue.total_duration_ms %>
+            &middot; <%= issue.total_duration_ms.round(0) %>ms total
+          <% end %>
+        </div>
+      </div>
+
+      <p class="text-sm text-gray-600 mt-2"><%= issue.description %></p>
+
+      <div class="mt-2 flex flex-wrap items-center gap-3 text-sm">
+        <% if issue.metadata[:controller] %>
+          <span class="font-mono text-sm font-semibold text-gray-800"><%= issue.metadata[:controller] %></span>
+        <% end %>
+        <% if issue.source_file %>
+          <%= source_link(issue.source_file, issue.source_line) %>
+        <% end %>
+      </div>
+
+      <% if issue.metadata[:sql_text] %>
+        <pre class="mt-2 bg-gray-800 text-green-300 p-2 rounded text-xs overflow-x-auto"><code><%= truncate_sql(issue.metadata[:sql_text], length: 200) %></code></pre>
+      <% end %>
+
+      <% if issue.metadata[:backtrace]&.any? %>
+        <pre class="mt-2 bg-gray-100 p-2 rounded text-xs text-gray-600 overflow-x-auto"><code><%= issue.metadata[:backtrace].first(3).join("\n") %></code></pre>
+      <% end %>
+
+      <div class="mt-3 bg-emerald-50 border border-emerald-200 rounded p-3">
+        <div class="text-xs font-semibold text-emerald-700 uppercase mb-1.5">How to fix</div>
+        <div class="text-sm text-gray-800 leading-relaxed"><%= format_suggested_fix(issue.suggested_fix) %></div>
+      </div>
+
+      <div class="mt-3 flex items-center gap-3 text-sm">
+        <% detail_path = issue_detail_path(issue) %>
+        <% if detail_path %>
+          <a href="<%= detail_path %>" class="text-blue-600 hover:underline">View details &rarr;</a>
+        <% end %>
+        <span class="text-xs text-gray-400"><%= time_ago_in_words_short(issue.latest_at) %></span>
+      </div>
+    </div>
+  <% end %>
+</div>

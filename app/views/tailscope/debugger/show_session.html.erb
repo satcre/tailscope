@@ -1,0 +1,225 @@
+<div class="mb-4">
+  <a href="<%= debugger_index_path %>" class="text-blue-600 hover:underline text-sm">&larr; Back to Debugger</a>
+</div>
+
+<div class="flex items-center gap-4 mb-6">
+  <h1 class="text-2xl font-bold">Session <%= @session.id %></h1>
+  <% if @session.paused? %>
+    <span class="inline-block bg-red-100 text-red-800 text-xs px-2 py-1 rounded font-semibold">Paused</span>
+  <% else %>
+    <span class="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded"><%= @session.status %></span>
+  <% end %>
+</div>
+
+<div class="mb-2 text-sm text-gray-600">
+  <strong>File:</strong> <span class="font-mono"><%= @session.file %></span>
+  &middot; <strong>Line:</strong> <%= @session.line %>
+  &middot; <strong>Method:</strong> <%= @session.method_name %>
+</div>
+
+<% if @session.paused? %>
+<div class="mb-6 flex flex-wrap gap-2">
+  <%= form_tag(debugger_step_into_path(id: @session.id), method: :post, class: "inline") do %>
+    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 font-semibold" title="Execute next line, descend into method calls">
+      Step Into
+    </button>
+  <% end %>
+  <%= form_tag(debugger_step_over_path(id: @session.id), method: :post, class: "inline") do %>
+    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 font-semibold" title="Execute next line, skip method internals">
+      Step Over
+    </button>
+  <% end %>
+  <%= form_tag(debugger_step_out_path(id: @session.id), method: :post, class: "inline") do %>
+    <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded text-sm hover:bg-indigo-700 font-semibold" title="Run until current method returns">
+      Step Out
+    </button>
+  <% end %>
+  <%= form_tag(debugger_continue_session_path(id: @session.id), method: :post, class: "inline") do %>
+    <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700 font-semibold" title="Resume full execution">
+      Continue
+    </button>
+  <% end %>
+</div>
+<% end %>
+
+<div class="mb-8">
+  <h2 class="text-lg font-semibold mb-3">Source Context</h2>
+  <div class="bg-gray-900 rounded overflow-hidden">
+    <pre class="text-sm"><code><% @source_lines.each do |sl| %><span class="<%= sl[:current] ? 'bg-yellow-600 text-white' : 'text-gray-300' %> block px-4"><span class="text-gray-500 select-none inline-block w-12 text-right mr-4"><%= sl[:number] %></span><%= h(sl[:content]) %></span>
+<% end %></code></pre>
+  </div>
+</div>
+
+<div class="mb-8">
+  <h2 class="text-lg font-semibold mb-3">Local Variables</h2>
+  <% if @locals.any? %>
+  <div class="bg-white shadow rounded overflow-hidden">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="px-4 py-2 text-left">Name</th>
+          <th class="px-4 py-2 text-left">Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @locals.each do |name, value| %>
+        <tr class="border-t">
+          <td class="px-4 py-2 font-mono font-semibold"><%= name %></td>
+          <td class="px-4 py-2 font-mono text-xs break-all"><%= h(value) %></td>
+        </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <% else %>
+  <p class="text-gray-500">No local variables in this binding.</p>
+  <% end %>
+</div>
+
+<% if @session.call_stack&.any? %>
+<div class="mb-8">
+  <h2 class="text-lg font-semibold mb-3">Call Stack</h2>
+  <div class="bg-white shadow rounded overflow-hidden">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="px-4 py-2 text-left w-12">#</th>
+          <th class="px-4 py-2 text-left">Method</th>
+          <th class="px-4 py-2 text-left">Location</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% source_root = Tailscope.configuration.source_root %>
+        <% @session.call_stack.each_with_index do |frame, idx| %>
+        <tr class="border-t <%= idx == 0 ? 'bg-yellow-50' : '' %>">
+          <td class="px-4 py-2 text-gray-500"><%= idx %></td>
+          <td class="px-4 py-2 font-mono font-semibold"><%= frame[:method] %></td>
+          <td class="px-4 py-2 font-mono text-xs text-gray-600">
+            <% short_file = frame[:file]&.sub(source_root + "/", "") %>
+            <%= short_file %>:<%= frame[:line] %>
+          </td>
+        </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<% end %>
+
+<% if @session.paused? %>
+<div class="mb-8">
+  <h2 class="text-lg font-semibold mb-3">REPL</h2>
+  <div class="bg-white shadow rounded p-4">
+    <div class="mb-3">
+      <textarea id="repl-input" rows="2" class="w-full border rounded px-3 py-2 text-sm font-mono" placeholder="Enter Ruby expression..."></textarea>
+    </div>
+    <button id="repl-evaluate" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">Evaluate</button>
+    <span class="text-xs text-gray-500 ml-2">Ctrl+Enter to evaluate</span>
+  </div>
+  <div id="repl-results" class="mt-4 space-y-2">
+    <% @session.eval_history.each do |entry| %>
+    <div class="bg-gray-50 border rounded p-3 text-sm">
+      <div class="font-mono text-gray-600 mb-1">&gt;&gt; <%= h(entry[:expression]) %></div>
+      <% if entry[:error] %>
+        <div class="font-mono text-red-600"><%= h(entry[:error]) %></div>
+      <% else %>
+        <div class="font-mono text-green-700"><%= h(entry[:result]) %></div>
+      <% end %>
+    </div>
+    <% end %>
+  </div>
+</div>
+
+<script>
+(function() {
+  var evalUrl = "<%= debugger_evaluate_path(id: @session.id) %>";
+  var pollUrl = "<%= debugger_poll_path %>";
+  var sessionId = "<%= @session.id %>";
+  var input = document.getElementById("repl-input");
+  var results = document.getElementById("repl-results");
+  var csrfToken = document.querySelector('meta[name="csrf-token"]');
+  var token = csrfToken ? csrfToken.getAttribute("content") : "";
+
+  function evaluate() {
+    var expr = input.value.trim();
+    if (!expr) return;
+
+    fetch(evalUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "X-CSRF-Token": token
+      },
+      body: JSON.stringify({ expression: expr })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var div = document.createElement("div");
+      div.className = "bg-gray-50 border rounded p-3 text-sm";
+      var exprDiv = document.createElement("div");
+      exprDiv.className = "font-mono text-gray-600 mb-1";
+      exprDiv.textContent = ">> " + data.expression;
+      div.appendChild(exprDiv);
+      var resultDiv = document.createElement("div");
+      if (data.error) {
+        resultDiv.className = "font-mono text-red-600";
+        resultDiv.textContent = data.error;
+      } else {
+        resultDiv.className = "font-mono text-green-700";
+        resultDiv.textContent = data.result;
+      }
+      div.appendChild(resultDiv);
+      results.appendChild(div);
+      input.value = "";
+      results.scrollTop = results.scrollHeight;
+    })
+    .catch(function(e) {
+      console.error("Eval error:", e);
+    });
+  }
+
+  document.getElementById("repl-evaluate").addEventListener("click", evaluate);
+  input.addEventListener("keydown", function(e) {
+    if (e.ctrlKey && e.key === "Enter") {
+      e.preventDefault();
+      evaluate();
+    }
+  });
+
+  // Poll for new sessions (auto-redirect after stepping)
+  function pollForNewSession() {
+    fetch(pollUrl)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.active_sessions && data.active_sessions.length > 0) {
+          var newest = data.active_sessions[0];
+          if (newest.id !== sessionId) {
+            window.location.href = "<%= debugger_session_path(id: '__ID__') %>".replace("__ID__", newest.id);
+          }
+        }
+      })
+      .catch(function() {});
+  }
+  setInterval(pollForNewSession, 1000);
+})();
+</script>
+<% end %>
+
+<% if @session.eval_history.any? && !@session.paused? %>
+<div class="mb-8">
+  <h2 class="text-lg font-semibold mb-3">Evaluation History</h2>
+  <div class="space-y-2">
+    <% @session.eval_history.each do |entry| %>
+    <div class="bg-gray-50 border rounded p-3 text-sm">
+      <div class="font-mono text-gray-600 mb-1">&gt;&gt; <%= h(entry[:expression]) %></div>
+      <% if entry[:error] %>
+        <div class="font-mono text-red-600"><%= h(entry[:error]) %></div>
+      <% else %>
+        <div class="font-mono text-green-700"><%= h(entry[:result]) %></div>
+      <% end %>
+    </div>
+    <% end %>
+  </div>
+</div>
+<% end %>

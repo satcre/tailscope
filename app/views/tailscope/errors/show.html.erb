@@ -1,0 +1,55 @@
+<div class="mb-4">
+  <a href="<%= tailscope.errors_path %>" class="text-sm text-blue-600 hover:underline">&larr; Back to errors</a>
+</div>
+
+<h1 class="text-2xl font-bold mb-6">Error #<%= @error["id"] %></h1>
+
+<div class="bg-white rounded-lg shadow p-6 space-y-4">
+  <div class="bg-red-50 border border-red-200 rounded p-4">
+    <div class="text-red-800 font-bold text-lg"><%= @error["exception_class"] %></div>
+    <div class="text-red-700 mt-1"><%= @error["message"] %></div>
+  </div>
+
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div>
+      <div class="text-sm text-gray-500">Request</div>
+      <div class="font-mono text-sm"><%= @error["request_method"] %> <%= @error["request_path"] %></div>
+    </div>
+    <div>
+      <div class="text-sm text-gray-500">Duration</div>
+      <div><%= @error["duration_ms"] ? duration_badge(@error["duration_ms"]) : "—" %></div>
+    </div>
+    <div>
+      <div class="text-sm text-gray-500">Request ID</div>
+      <div class="text-sm font-mono"><%= @error["request_id"] || "—" %></div>
+    </div>
+    <div>
+      <div class="text-sm text-gray-500">Recorded</div>
+      <div class="text-sm"><%= @error["recorded_at"] %></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="text-sm text-gray-500 mb-1">Source</div>
+    <div><%= source_link(@error["source_file"], @error["source_line"]) %></div>
+  </div>
+
+  <% if @error["source_file"] %>
+    <%= render partial: "tailscope/source/viewer", locals: { file: @error["source_file"], line: @error["source_line"].to_i } %>
+  <% end %>
+
+  <% if @error["params"].present? %>
+    <div>
+      <div class="text-sm text-gray-500 mb-1">Params</div>
+      <pre class="bg-gray-100 p-3 rounded text-sm overflow-x-auto"><code><%= @error["params"] %></code></pre>
+    </div>
+  <% end %>
+
+  <% if @error["backtrace"].present? %>
+    <div>
+      <div class="text-sm text-gray-500 mb-1">Backtrace</div>
+      <pre class="bg-gray-900 text-gray-300 p-4 rounded text-xs overflow-x-auto leading-relaxed"><code><% @error["backtrace"].to_s.split("\n").each do |line| %><%= line %>
+<% end %></code></pre>
+    </div>
+  <% end %>
+</div>

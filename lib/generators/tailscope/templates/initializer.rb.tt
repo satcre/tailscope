@@ -1,0 +1,21 @@
+# frozen_string_literal: true
+
+Tailscope.configure do |config|
+  # Enable/disable Tailscope (defaults to development only)
+  config.enabled = Rails.env.development?
+
+  # Minimum query duration to record (milliseconds)
+  config.slow_query_threshold_ms = 100
+
+  # Minimum request duration to record (milliseconds)
+  config.slow_request_threshold_ms = 500
+
+  # Number of identical queries from the same call site to flag as N+1
+  config.n_plus_one_threshold = 3
+
+  # Days to keep records before automatic purge
+  config.storage_retention_days = 7
+
+  # SQLite database path
+  config.database_path = Rails.root.join("db", "tailscope.sqlite3").to_s
+end

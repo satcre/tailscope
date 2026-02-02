@@ -1,0 +1,49 @@
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold">
+    <%= @n_plus_one_only ? "N+1 Queries" : "Slow Queries" %>
+  </h1>
+  <div class="flex gap-2">
+    <a href="<%= tailscope.queries_path %>" class="px-3 py-1 text-sm rounded <%= @n_plus_one_only ? 'bg-gray-200 text-gray-700' : 'bg-gray-900 text-white' %>">All</a>
+    <a href="<%= tailscope.queries_path(n_plus_one: 1) %>" class="px-3 py-1 text-sm rounded <%= @n_plus_one_only ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700' %>">N+1 Only</a>
+  </div>
+</div>
+
+<div class="bg-white rounded-lg shadow overflow-hidden">
+  <table class="min-w-full divide-y divide-gray-200">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">SQL</th>
+        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
+        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Source</th>
+        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">N+1</th>
+        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">When</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      <% @queries.each do |q| %>
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-2 text-sm font-mono text-gray-700 max-w-md truncate">
+            <a href="<%= tailscope.query_path(q["id"]) %>" class="hover:text-blue-600"><%= truncate_sql(q["sql_text"]) %></a>
+          </td>
+          <td class="px-4 py-2"><%= duration_badge(q["duration_ms"]) %></td>
+          <td class="px-4 py-2"><%= source_link(q["source_file"], q["source_line"]) %></td>
+          <td class="px-4 py-2">
+            <% if q["n_plus_one"] == 1 %>
+              <span class="inline-block px-2 py-0.5 text-xs font-medium rounded bg-red-100 text-red-700"><%= q["n_plus_one_count"] %>x</span>
+            <% end %>
+          </td>
+          <td class="px-4 py-2 text-xs text-gray-500"><%= time_ago_in_words_short(q["recorded_at"]) %></td>
+        </tr>
+      <% end %>
+      <% if @queries.empty? %>
+        <tr><td colspan="5" class="px-4 py-8 text-center text-gray-400">No queries recorded.</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<% if @queries.size == per_page %>
+  <div class="mt-4 flex justify-end">
+    <a href="<%= tailscope.queries_path(page: @page + 1, n_plus_one: @n_plus_one_only ? 1 : nil) %>" class="text-sm text-blue-600 hover:underline">Next page &rarr;</a>
+  </div>
+<% end %>

@@ -1,0 +1,162 @@
+<div id="session-alert" class="hidden mb-4 p-4 bg-yellow-100 border border-yellow-400 rounded text-yellow-800 font-semibold">
+  A breakpoint has been hit! <a href="#" id="session-alert-link" class="underline">View session</a>
+</div>
+
+<h1 class="text-2xl font-bold mb-6">Debugger</h1>
+
+<% if @active_sessions.any? %>
+<div class="mb-8">
+  <h2 class="text-lg font-semibold mb-3 text-red-600">Active Sessions (paused)</h2>
+  <div class="bg-white shadow rounded overflow-hidden">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="px-4 py-2 text-left">Session</th>
+          <th class="px-4 py-2 text-left">File</th>
+          <th class="px-4 py-2 text-left">Line</th>
+          <th class="px-4 py-2 text-left">Method</th>
+          <th class="px-4 py-2 text-left">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @active_sessions.each do |session| %>
+        <tr class="border-t">
+          <td class="px-4 py-2 font-mono text-xs"><%= session.id %></td>
+          <td class="px-4 py-2 font-mono text-xs"><%= session.file %></td>
+          <td class="px-4 py-2"><%= session.line %></td>
+          <td class="px-4 py-2"><%= session.method_name %></td>
+          <td class="px-4 py-2">
+            <a href="<%= debugger_session_path(id: session.id) %>" class="text-blue-600 hover:underline mr-2">Inspect</a>
+            <%= form_tag(debugger_continue_session_path(id: session.id), method: :post, class: "inline") do %>
+              <button type="submit" class="text-green-600 hover:underline">Continue</button>
+            <% end %>
+          </td>
+        </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<% end %>
+
+<div class="mb-8">
+  <h2 class="text-lg font-semibold mb-3">Breakpoints</h2>
+  <% if @breakpoints.any? %>
+  <div class="bg-white shadow rounded overflow-hidden mb-4">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="px-4 py-2 text-left">ID</th>
+          <th class="px-4 py-2 text-left">File</th>
+          <th class="px-4 py-2 text-left">Line</th>
+          <th class="px-4 py-2 text-left">Condition</th>
+          <th class="px-4 py-2 text-left">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @breakpoints.each do |bp| %>
+        <tr class="border-t">
+          <td class="px-4 py-2"><%= bp["id"] %></td>
+          <td class="px-4 py-2 font-mono text-xs"><%= bp["file"] %></td>
+          <td class="px-4 py-2"><%= bp["line"] %></td>
+          <td class="px-4 py-2 font-mono text-xs"><%= bp["condition"] %></td>
+          <td class="px-4 py-2">
+            <%= form_tag(debugger_remove_breakpoint_path(id: bp["id"]), method: :delete, class: "inline") do %>
+              <button type="submit" class="text-red-600 hover:underline">Remove</button>
+            <% end %>
+          </td>
+        </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <% else %>
+  <p class="text-gray-500 mb-4">No breakpoints set.</p>
+  <% end %>
+</div>
+
+<div class="mb-8">
+  <h2 class="text-lg font-semibold mb-3">Add Breakpoint</h2>
+  <div class="bg-white shadow rounded p-4">
+    <%= form_tag(debugger_breakpoints_path, method: :post) do %>
+      <div class="flex gap-3 items-end">
+        <div class="flex-1">
+          <label class="block text-sm font-medium text-gray-700 mb-1">File (absolute path)</label>
+          <input type="text" name="file" class="w-full border rounded px-3 py-2 text-sm" placeholder="<%= Tailscope.configuration.source_root %>/app/controllers/..." required>
+        </div>
+        <div class="w-24">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Line</label>
+          <input type="number" name="line" class="w-full border rounded px-3 py-2 text-sm" min="1" required>
+        </div>
+        <div class="w-48">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Condition (optional)</label>
+          <input type="text" name="condition" class="w-full border rounded px-3 py-2 text-sm" placeholder="user.admin?">
+        </div>
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">Add</button>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<div class="mb-4">
+  <a href="<%= debugger_browse_path %>" class="text-blue-600 hover:underline text-sm">Browse files to set breakpoints</a>
+</div>
+
+<% if @recent_sessions.any? %>
+<div class="mb-8">
+  <h2 class="text-lg font-semibold mb-3">Recent Sessions</h2>
+  <div class="bg-white shadow rounded overflow-hidden">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="px-4 py-2 text-left">Session</th>
+          <th class="px-4 py-2 text-left">File</th>
+          <th class="px-4 py-2 text-left">Line</th>
+          <th class="px-4 py-2 text-left">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @recent_sessions.each do |session| %>
+        <tr class="border-t">
+          <td class="px-4 py-2 font-mono text-xs">
+            <a href="<%= debugger_session_path(id: session.id) %>" class="text-blue-600 hover:underline"><%= session.id %></a>
+          </td>
+          <td class="px-4 py-2 font-mono text-xs"><%= session.file %></td>
+          <td class="px-4 py-2"><%= session.line %></td>
+          <td class="px-4 py-2">
+            <% if session.paused? %>
+              <span class="inline-block bg-red-100 text-red-800 text-xs px-2 py-1 rounded">Paused</span>
+            <% else %>
+              <span class="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded"><%= session.status %></span>
+            <% end %>
+          </td>
+        </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<% end %>
+
+<script>
+(function() {
+  var pollUrl = "<%= debugger_poll_path %>";
+  function poll() {
+    fetch(pollUrl, { headers: { "Accept": "application/json" } })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var alert = document.getElementById("session-alert");
+        var link = document.getElementById("session-alert-link");
+        if (data.active_sessions && data.active_sessions.length > 0) {
+          var s = data.active_sessions[0];
+          link.href = "<%= debugger_session_path(id: '__ID__') %>".replace("__ID__", s.id);
+          alert.classList.remove("hidden");
+        } else {
+          alert.classList.add("hidden");
+        }
+      })
+      .catch(function() {});
+  }
+  setInterval(poll, 1500);
+})();
+</script>

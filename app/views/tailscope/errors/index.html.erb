@@ -1,0 +1,37 @@
+<h1 class="text-2xl font-bold mb-6">Errors</h1>
+
+<div class="bg-white rounded-lg shadow overflow-hidden">
+  <table class="min-w-full divide-y divide-gray-200">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Exception</th>
+        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Message</th>
+        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Source</th>
+        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Request</th>
+        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">When</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      <% @errors.each do |e| %>
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-2">
+            <a href="<%= tailscope.error_path(e["id"]) %>" class="text-red-600 font-semibold text-sm hover:underline"><%= e["exception_class"] %></a>
+          </td>
+          <td class="px-4 py-2 text-sm text-gray-700 max-w-md truncate"><%= truncate_sql(e["message"], length: 80) %></td>
+          <td class="px-4 py-2"><%= source_link(e["source_file"], e["source_line"]) %></td>
+          <td class="px-4 py-2 text-sm font-mono text-gray-500"><%= e["request_method"] %> <%= e["request_path"] %></td>
+          <td class="px-4 py-2 text-xs text-gray-500"><%= time_ago_in_words_short(e["recorded_at"]) %></td>
+        </tr>
+      <% end %>
+      <% if @errors.empty? %>
+        <tr><td colspan="5" class="px-4 py-8 text-center text-gray-400">No errors recorded.</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<% if @errors.size == per_page %>
+  <div class="mt-4 flex justify-end">
+    <a href="<%= tailscope.errors_path(page: @page + 1) %>" class="text-sm text-blue-600 hover:underline">Next page &rarr;</a>
+  </div>
+<% end %>
