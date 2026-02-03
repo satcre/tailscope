@@ -10,7 +10,7 @@
   <line x1="70" y1="60" x2="82" y2="60" stroke="#F9FAFB" stroke-width="3" stroke-linecap="round"/>
   <!-- Tail/signal wave -->
   <!-- Wordmark -->
-  <text x="88" y="72" font-family="system-ui, -apple-system, sans-serif" font-size="48" font-weight="800" fill="#F9FAFB" letter-spacing="-1">tail<tspan fill="#EF4444">scope</tspan></text>
+  <text x="84" y="72" font-family="system-ui, -apple-system, sans-serif" font-size="48" font-weight="800" fill="#F9FAFB" letter-spacing="-1">tail<tspan fill="#EF4444">scope</tspan></text>
   <!-- Tail/signal wave (rendered after text so it appears in front) -->
-  <path d="M82 60 Q90 42 98 60 Q106 78 114 60 Q122 42 130 60 Q138 78 146 60 Q154 42 162 60 Q170 78 178 60 Q186 42 194 60" stroke="#EF4444" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M78 60 Q88 38 98 60 Q108 82 118 60 Q128 38 138 60 Q148 82 158 60 Q168 38 178 60 Q188 82 198 60" stroke="#EF4444" stroke-width="4" fill="none" stroke-linecap="round"/>
 </svg>
