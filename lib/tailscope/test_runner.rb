@@ -193,16 +193,14 @@ module Tailscope
           "--no-color", target
         ]
 
-        Bundler.with_original_env do
-          pid = Process.spawn(
-            { "RAILS_ENV" => "test", "DISABLE_SPRING" => "1" },
-            *cmd_parts,
-            chdir: Rails.root.to_s,
-            out: File::NULL,
-            err: File::NULL
-          )
-          Process.wait(pid)
-        end
+        pid = Process.spawn(
+          { "RAILS_ENV" => "test", "DISABLE_SPRING" => "1" },
+          *cmd_parts,
+          chdir: Rails.root.to_s,
+          out: File::NULL,
+          err: File::NULL
+        )
+        Process.wait(pid)
 
         result = if File.exist?(json_file)
           data = JSON.parse(File.read(json_file))
@@ -261,27 +259,23 @@ module Tailscope
         console_output = ""
         read_io, write_io = IO.pipe
 
-        # Use unbundled_env so the child process gets a clean Bundler
-        # environment and properly resolves the test group gems.
-        Bundler.with_original_env do
-          pid = Process.spawn(
-            { "RAILS_ENV" => "test", "DISABLE_SPRING" => "1", "TERM" => "xterm-256color" },
-            *cmd_parts,
-            chdir: Rails.root.to_s,
-            out: write_io,
-            err: write_io
-          )
+        pid = Process.spawn(
+          { "RAILS_ENV" => "test", "DISABLE_SPRING" => "1", "TERM" => "xterm-256color" },
+          *cmd_parts,
+          chdir: Rails.root.to_s,
+          out: write_io,
+          err: write_io
+        )
 
-          @current_run[:pid] = pid
-          write_io.close
+        @current_run[:pid] = pid
+        write_io.close
 
-          console_output = read_io.read
-          read_io.close
+        console_output = read_io.read
+        read_io.close
 
-          Process.wait(pid)
-        end
+        Process.wait(pid)
 
-        @current_run[:console_output] = console_output[0..10_000]
+        @current_run[:console_output] = console_output[0..100_000]
 
         if File.exist?(json_file)
           json_str = File.read(json_file)
