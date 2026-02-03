@@ -27,6 +27,10 @@ module Tailscope
         render json: TestRunner.dry_run(target)
       end
 
+      def coverage
+        render json: TestRunner.coverage
+      end
+
       def cancel
         result = TestRunner.cancel!
 

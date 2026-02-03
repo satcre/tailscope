@@ -420,6 +420,86 @@ function NotAvailable() {
   )
 }
 
+// --- Coverage drawer ---
+
+function CoverageBar({ percentage }) {
+  const color = percentage >= 80 ? 'bg-green-500' : percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+  return (
+    <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden shrink-0">
+      <div className={`h-full ${color} rounded-full`} style={{ width: `${Math.min(percentage, 100)}%` }} />
+    </div>
+  )
+}
+
+function CoverageDrawer({ data, loading }) {
+  const [expandedFile, setExpandedFile] = React.useState(null)
+
+  if (loading) return <div className="text-sm text-gray-400">Loading coverage data...</div>
+  if (!data?.available) return (
+    <div className="text-center py-12">
+      <div className="text-gray-500 text-sm mb-2">No coverage data found.</div>
+      <div className="text-gray-400 text-xs">Run your tests with SimpleCov enabled to generate coverage data.</div>
+    </div>
+  )
+
+  const { summary, files } = data
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Summary */}
+      <div className="flex items-center gap-4 mb-4 pb-4 border-b border-gray-200">
+        <div className="text-3xl font-bold" style={{ color: summary.percentage >= 80 ? '#16a34a' : summary.percentage >= 50 ? '#ca8a04' : '#dc2626' }}>
+          {summary.percentage}%
+        </div>
+        <div className="text-sm text-gray-500">
+          <div>{summary.covered_lines.toLocaleString()} / {summary.total_lines.toLocaleString()} lines covered</div>
+          <div>{files.length} files</div>
+        </div>
+        <div className="flex-1" />
+        <CoverageBar percentage={summary.percentage} />
+      </div>
+
+      {/* File list */}
+      <div className="flex-1 overflow-y-auto space-y-0.5">
+        {files.map((file) => (
+          <CoverageFileRow
+            key={file.path}
+            file={file}
+            isOpen={expandedFile === file.path}
+            onToggle={() => setExpandedFile(expandedFile === file.path ? null : file.path)}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function CoverageFileRow({ file, isOpen, onToggle }) {
+  const pctColor = file.percentage >= 80 ? 'text-green-700' : file.percentage >= 50 ? 'text-yellow-700' : 'text-red-700'
+
+  return (
+    <div>
+      <div
+        className="flex items-center gap-2 py-1.5 px-2 hover:bg-gray-50 rounded cursor-pointer text-sm"
+        onClick={onToggle}
+      >
+        <svg className={`w-3 h-3 text-gray-400 transition-transform shrink-0 ${isOpen ? 'rotate-90' : ''}`} viewBox="0 0 16 16" fill="currentColor">
+          <path d="M6 3l5 5-5 5V3z" />
+        </svg>
+        <span className="font-mono text-gray-600 truncate flex-1">{file.path}</span>
+        <span className="text-xs text-gray-400 shrink-0">{file.covered}/{file.total}</span>
+        <CoverageBar percentage={file.percentage} />
+        <span className={`text-xs font-medium w-12 text-right shrink-0 ${pctColor}`}>{file.percentage}%</span>
+      </div>
+      {isOpen && (
+        <div className="ml-4 mr-2 mb-2 mt-1">
+          <SourceViewer file={file.path} line={1} full coverage={file.lines} />
+        </div>
+      )}
+    </div>
+  )
+}
+
 // --- Drawer content: results + console ---
 
 function ResultsDrawer({ runStatus, isRunning, onCancel, onViewSource }) {
@@ -599,6 +679,9 @@ export default function Tests() {
   const [expanded, setExpanded] = React.useState(loadStoredExpanded)
   const [fileExamples, setFileExamples] = React.useState({})
   const [sourceDrawer, setSourceDrawer] = React.useState({ open: false, file: null, line: null })
+  const [coverageData, setCoverageData] = React.useState(null)
+  const [coverageOpen, setCoverageOpen] = React.useState(false)
+  const [coverageLoading, setCoverageLoading] = React.useState(false)
   const pollingRef = React.useRef(null)
 
   React.useEffect(() => {
@@ -683,6 +766,16 @@ export default function Tests() {
     setSourceDrawer({ open: true, file, line: line || 1 })
   }
 
+  const handleCoverage = () => {
+    setCoverageLoading(true)
+    setCoverageOpen(true)
+    api.get('/tests/coverage').then((data) => {
+      setCoverageData(data)
+    }).catch(() => {
+      setCoverageData({ available: false })
+    }).finally(() => setCoverageLoading(false))
+  }
+
   const handleExpandFile = (path) => {
     if (fileExamples[path]) return // already fetched
     api.get(`/tests/examples?target=${encodeURIComponent(path)}`).then((data) => {
@@ -721,6 +814,14 @@ export default function Tests() {
               {countFiles({ type: 'folder', children: specs.tree })} spec files
             </span>
           )}
+          {runStatus?.summary && !isRunning && (
+            <span className="flex items-center gap-2 text-sm">
+              <span className="text-gray-500">{runStatus.summary.total}</span>
+              {runStatus.summary.passed > 0 && <span className="text-green-600 font-medium">{runStatus.summary.passed} passed</span>}
+              {runStatus.summary.failed > 0 && <span className="text-red-600 font-medium">{runStatus.summary.failed} failed</span>}
+              {runStatus.summary.pending > 0 && <span className="text-yellow-600 font-medium">{runStatus.summary.pending} pending</span>}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-3">
           {isRunning && (
@@ -737,6 +838,17 @@ export default function Tests() {
               className="px-3 py-1 text-sm rounded bg-gray-200 text-gray-700 hover:bg-gray-300"
             >Last Results</button>
           )}
+          <button
+            onClick={handleCoverage}
+            disabled={isRunning}
+            className="px-4 py-1.5 text-sm rounded bg-indigo-600 text-white hover:bg-indigo-700 font-medium flex items-center gap-2 disabled:opacity-50"
+          >
+            <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="2" y="2" width="12" height="12" rx="2" />
+              <path d="M5 10V8M8 10V5M11 10V7" strokeLinecap="round" />
+            </svg>
+            Coverage
+          </button>
           <button
             onClick={() => handleRun(null)}
             disabled={isRunning}
@@ -789,6 +901,11 @@ export default function Tests() {
             </div>
           </div>
         )}
+      </Drawer>
+
+      {/* Coverage drawer */}
+      <Drawer isOpen={coverageOpen} onClose={() => setCoverageOpen(false)} title="Code Coverage" wide>
+        <CoverageDrawer data={coverageData} loading={coverageLoading} />
       </Drawer>
     </div>
   )

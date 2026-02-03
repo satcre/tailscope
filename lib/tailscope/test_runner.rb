@@ -108,6 +108,69 @@ module Tailscope
         { run: run }
       end
 
+      def coverage
+        return { available: false } unless defined?(Rails)
+
+        resultset = Rails.root.join("coverage", ".resultset.json")
+        return { available: false } unless File.exist?(resultset)
+
+        data = JSON.parse(File.read(resultset))
+        raw_coverage = nil
+
+        # SimpleCov stores under the command name key (e.g. "RSpec", "Unit Tests")
+        data.each_value do |entry|
+          if entry.is_a?(Hash) && entry["coverage"]
+            raw_coverage = entry["coverage"]
+            break
+          end
+        end
+
+        return { available: false } unless raw_coverage
+
+        source_root = Rails.root.to_s + "/"
+        total_covered = 0
+        total_relevant = 0
+        files = []
+
+        raw_coverage.each do |file_path, file_data|
+          # Only include app/ and lib/ files
+          relative = file_path.sub(source_root, "")
+          next unless relative.start_with?("app/") || relative.start_with?("lib/")
+
+          lines = file_data.is_a?(Hash) ? file_data["lines"] : file_data
+          next unless lines.is_a?(Array)
+
+          relevant = lines.count { |v| !v.nil? }
+          covered = lines.count { |v| v.is_a?(Integer) && v > 0 }
+          missed = relevant - covered
+          percentage = relevant > 0 ? (covered.to_f / relevant * 100).round(1) : 100.0
+
+          total_covered += covered
+          total_relevant += relevant
+
+          files << {
+            path: relative,
+            covered: covered,
+            missed: missed,
+            total: relevant,
+            percentage: percentage,
+            lines: lines,
+          }
+        end
+
+        files.sort_by! { |f| f[:percentage] }
+
+        overall = total_relevant > 0 ? (total_covered.to_f / total_relevant * 100).round(1) : 0.0
+
+        {
+          available: true,
+          summary: { total_lines: total_relevant, covered_lines: total_covered, percentage: overall },
+          files: files,
+        }
+      rescue => e
+        { available: false, error: e.message }
+      end
+
       def dry_run(target)
         target = sanitize_target(target)
         return { examples: [] } unless target
@@ -178,7 +241,7 @@ module Tailscope
         cmd_parts = [
           "bundle", "exec", "rspec",
           "--format", "json", "--out", json_file,
-          "--format", "progress", "--force-color",
+          "--format", "documentation", "--force-color",
           target || "spec"
         ]
 

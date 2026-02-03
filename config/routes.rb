@@ -20,6 +20,7 @@ Tailscope::Engine.routes.draw do
     post "tests/run", to: "tests#run", as: :tests_run
     get "tests/status", to: "tests#status", as: :tests_status
     post "tests/cancel", to: "tests#cancel", as: :tests_cancel
+    get "tests/coverage", to: "tests#coverage", as: :tests_coverage
 
     get "source", to: "source#show", as: :source
     post "editor/open", to: "editor#open", as: :editor_open

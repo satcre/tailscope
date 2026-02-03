@@ -4,7 +4,14 @@ import { useHighlightedLines, HighlightedCode } from './HighlightedLine'
 import OpenInEditor from './OpenInEditor'
 import OpenInDebugger from './OpenInDebugger'
 
-export default function SourceViewer({ file, line, full }) {
+function coverageClass(coverage, lineNumber) {
+  if (!coverage) return ''
+  const val = coverage[lineNumber - 1]
+  if (val === null || val === undefined) return ''
+  return val > 0 ? 'bg-green-900/20' : 'bg-red-900/30'
+}
+
+export default function SourceViewer({ file, line, full, coverage }) {
   const [source, setSource] = React.useState(null)
   const [loading, setLoading] = React.useState(true)
 
@@ -37,7 +44,7 @@ export default function SourceViewer({ file, line, full }) {
         <table className="text-sm font-mono w-full">
           <tbody>
             {source.lines.map((l, i) => (
-              <tr key={l.number} className={l.current ? 'bg-yellow-900/30' : ''}>
+              <tr key={l.number} className={l.current ? 'bg-yellow-900/30' : coverageClass(coverage, l.number)}>
                 <td className="px-3 py-0.5 text-right text-gray-500 select-none w-12 border-r border-gray-700">
                   {l.number}
                 </td>
