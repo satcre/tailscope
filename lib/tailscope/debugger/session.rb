@@ -133,23 +133,33 @@ module Tailscope
           @sessions = {}
         end
 
+        def ensure_setup!
+          @mutex ||= Mutex.new
+          @sessions ||= {}
+        end
+
         def add(session)
+          ensure_setup!
           @mutex.synchronize { @sessions[session.id] = session }
         end
 
         def find(id)
+          ensure_setup!
           @mutex.synchronize { @sessions[id] }
         end
 
         def active_sessions
+          ensure_setup!
           @mutex.synchronize { @sessions.values.select(&:paused?) }
         end
 
         def all_sessions
+          ensure_setup!
           @mutex.synchronize { @sessions.values.sort_by(&:created_at).reverse }
         end
 
         def cleanup_old!(max_age: 300)
+          ensure_setup!
           cutoff = Time.now - max_age
           @mutex.synchronize do
             @sessions.delete_if { |_id, s| !s.paused? && s.created_at < cutoff }
