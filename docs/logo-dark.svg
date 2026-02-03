@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 120" fill="none">
+  <!-- Scope/lens icon -->
+  <circle cx="50" cy="60" r="28" stroke="#F9FAFB" stroke-width="5" fill="none"/>
+  <circle cx="50" cy="60" r="16" stroke="#F9FAFB" stroke-width="3" fill="none"/>
+  <circle cx="50" cy="60" r="5" fill="#EF4444"/>
+  <!-- Crosshairs -->
+  <line x1="50" y1="28" x2="50" y2="40" stroke="#F9FAFB" stroke-width="3" stroke-linecap="round"/>
+  <line x1="50" y1="80" x2="50" y2="92" stroke="#F9FAFB" stroke-width="3" stroke-linecap="round"/>
+  <line x1="18" y1="60" x2="30" y2="60" stroke="#F9FAFB" stroke-width="3" stroke-linecap="round"/>
+  <line x1="70" y1="60" x2="82" y2="60" stroke="#F9FAFB" stroke-width="3" stroke-linecap="round"/>
+  <!-- Tail/signal wave -->
+  <path d="M82 60 Q95 40 108 60 Q121 80 134 60 Q147 40 160 60" stroke="#EF4444" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <!-- Wordmark -->
+  <text x="172" y="72" font-family="system-ui, -apple-system, sans-serif" font-size="48" font-weight="800" fill="#F9FAFB" letter-spacing="-1">tail<tspan fill="#EF4444">scope</tspan></text>
+</svg>

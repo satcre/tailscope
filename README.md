@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="docs/logo.svg" alt="Tailscope" width="400">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/logo-light.svg">
+    <img src="docs/logo-light.svg" alt="Tailscope" width="400">
+  </picture>
 </p>
 
 <p align="center">Development profiler and debugger for Ruby on Rails. Captures slow queries, N+1 patterns, slow requests, runtime errors, and code smells — then presents them in a web dashboard with source-level detail, suggested fixes, and one-click editor integration.</p>
