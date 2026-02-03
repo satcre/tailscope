@@ -2,14 +2,10 @@
 
 module Tailscope
   module Subscribers
-    class CacheSubscriber
-      SLOW_THRESHOLD_MS = 10
-
+    class ViewSubscriber
       EVENTS = %w[
-        cache_read.active_support
-        cache_write.active_support
-        cache_delete.active_support
-        cache_fetch_hit.active_support
+        render_template.action_view
+        render_partial.action_view
       ].freeze
 
       def self.attach!
@@ -23,14 +19,16 @@ module Tailscope
 
       def handle(event)
         return unless Tailscope.enabled?
-        return unless event.duration >= SLOW_THRESHOLD_MS
 
         request_id = Thread.current[:tailscope_request_id]
         return unless request_id
 
         payload = event.payload
-        operation = event.name.sub(".active_support", "").sub("cache_", "")
-        source = Tailscope::SourceLocator.locate(caller_locations(2))
+        identifier = payload[:identifier] || ""
+        type = event.name.include?("partial") ? "partial" : "template"
+
+        # Shorten the identifier for display
+        short_name = identifier.sub(%r{.*/app/views/}, "").sub(%r{.*/app/}, "app/")
 
         started_at_ms = nil
         if Thread.current[:tailscope_request_start]
@@ -39,17 +37,18 @@ module Tailscope
         end
 
         Tailscope::Storage.record_service(
-          category: "cache",
-          name: "Cache #{operation}",
+          category: "view",
+          name: short_name,
           duration_ms: event.duration.round(2),
           started_at_ms: started_at_ms&.round(2),
           detail: {
-            operation: operation,
-            key: payload[:key].to_s[0..200],
+            identifier: identifier,
+            type: type,
+            layout: payload[:layout],
           },
-          source_file: source[:source_file],
-          source_line: source[:source_line],
-          source_method: source[:source_method],
+          source_file: identifier.start_with?("/") ? identifier : nil,
+          source_line: nil,
+          source_method: nil,
           request_id: request_id,
         )
       end

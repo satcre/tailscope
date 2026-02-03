@@ -28,6 +28,7 @@ module Tailscope
           category: "job",
           name: "Enqueue #{job.class.name}",
           duration_ms: event.duration.round(2),
+          started_at_ms: compute_started_at_ms(event),
           detail: {
             job_class: job.class.name,
             queue: job.queue_name,
@@ -53,6 +54,7 @@ module Tailscope
           category: "job",
           name: "Perform #{job.class.name}",
           duration_ms: event.duration.round(2),
+          started_at_ms: compute_started_at_ms(event),
           detail: {
             job_class: job.class.name,
             queue: job.queue_name,
@@ -63,6 +65,13 @@ module Tailscope
           source_method: source[:source_method],
           request_id: request_id,
         )
+      end
+      private
+
+      def compute_started_at_ms(event)
+        return nil unless Thread.current[:tailscope_request_start]
+        event_end = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        ((event_end - event.duration / 1000.0) - Thread.current[:tailscope_request_start]) * 1000.0
       end
     end
   end

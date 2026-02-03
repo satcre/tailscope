@@ -37,6 +37,12 @@ module Tailscope
 
         # Record queries: all queries during a tracked request, or slow standalone queries
         if duration_ms >= Tailscope.configuration.slow_query_threshold_ms || Thread.current[:tailscope_request_id]
+          started_at_ms = nil
+          if Thread.current[:tailscope_request_start]
+            event_end = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+            started_at_ms = ((event_end - duration_ms / 1000.0) - Thread.current[:tailscope_request_start]) * 1000.0
+          end
+
           Tailscope::Storage.record_query(
             sql_text: sql.to_s[0..2000],
             duration_ms: duration_ms.round(2),
@@ -45,6 +51,7 @@ module Tailscope
             source_line: source[:source_line],
             source_method: source[:source_method],
             request_id: Thread.current[:tailscope_request_id],
+            started_at_ms: started_at_ms&.round(2),
           )
         end
       end

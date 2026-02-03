@@ -16,6 +16,7 @@ module Tailscope
         Thread.current[:tailscope_query_log] = []
 
         start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        Thread.current[:tailscope_request_start] = start
 
         begin
           status, headers, response = @app.call(env)
@@ -30,6 +31,7 @@ module Tailscope
         ensure
           Thread.current[:tailscope_request_id] = nil
           Thread.current[:tailscope_query_log] = nil
+          Thread.current[:tailscope_request_start] = nil
         end
       end
 

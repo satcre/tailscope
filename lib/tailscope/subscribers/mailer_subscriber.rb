@@ -19,10 +19,17 @@ module Tailscope
         payload = event.payload
         source = Tailscope::SourceLocator.locate(caller_locations(2))
 
+        started_at_ms = nil
+        if Thread.current[:tailscope_request_start]
+          event_end = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+          started_at_ms = ((event_end - event.duration / 1000.0) - Thread.current[:tailscope_request_start]) * 1000.0
+        end
+
         Tailscope::Storage.record_service(
           category: "mailer",
           name: "#{payload[:mailer]}##{payload[:action]}",
           duration_ms: event.duration.round(2),
+          started_at_ms: started_at_ms&.round(2),
           detail: {
             mailer: payload[:mailer],
             action: payload[:action],

@@ -20,6 +20,7 @@ module Tailscope
         Tailscope::Subscribers::JobSubscriber.attach!
         Tailscope::Subscribers::MailerSubscriber.attach!
         Tailscope::Subscribers::CacheSubscriber.attach!
+        Tailscope::Subscribers::ViewSubscriber.attach!
       end
     end
 

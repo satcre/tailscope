@@ -106,6 +106,8 @@ module Tailscope
     MIGRATIONS = [
       "ALTER TABLE tailscope_requests ADD COLUMN source_file TEXT",
       "ALTER TABLE tailscope_requests ADD COLUMN source_line INTEGER",
+      "ALTER TABLE tailscope_queries ADD COLUMN started_at_ms REAL",
+      "ALTER TABLE tailscope_services ADD COLUMN started_at_ms REAL",
     ].freeze
 
     class << self

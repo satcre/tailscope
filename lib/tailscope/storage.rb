@@ -219,10 +219,11 @@ module Tailscope
         case type
         when :query
           db.execute(
-            "INSERT INTO tailscope_queries (sql_text, duration_ms, name, source_file, source_line, source_method, request_id, n_plus_one, n_plus_one_count, recorded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+            "INSERT INTO tailscope_queries (sql_text, duration_ms, name, source_file, source_line, source_method, request_id, n_plus_one, n_plus_one_count, started_at_ms, recorded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
             [attrs[:sql_text], attrs[:duration_ms], attrs[:name], attrs[:source_file],
              attrs[:source_line], attrs[:source_method], attrs[:request_id],
-             attrs[:n_plus_one] ? 1 : 0, attrs[:n_plus_one_count] || 0]
+             attrs[:n_plus_one] ? 1 : 0, attrs[:n_plus_one_count] || 0,
+             attrs[:started_at_ms]]
           )
         when :request
           db.execute(
@@ -244,11 +245,11 @@ module Tailscope
           )
         when :service
           db.execute(
-            "INSERT INTO tailscope_services (category, name, duration_ms, detail, source_file, source_line, source_method, request_id, recorded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+            "INSERT INTO tailscope_services (category, name, duration_ms, detail, source_file, source_line, source_method, request_id, started_at_ms, recorded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
             [attrs[:category], attrs[:name], attrs[:duration_ms],
              attrs[:detail].is_a?(Hash) ? JSON.dump(attrs[:detail]) : attrs[:detail],
              attrs[:source_file], attrs[:source_line], attrs[:source_method],
-             attrs[:request_id]]
+             attrs[:request_id], attrs[:started_at_ms]]
           )
         end
       end
