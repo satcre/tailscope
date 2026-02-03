@@ -8,7 +8,15 @@ import OpenInDebugger from '../components/OpenInDebugger'
 const LS_EXPANDED_KEY = 'tailscope_tests_expanded'
 
 function loadStoredExpanded() {
-  try { return JSON.parse(localStorage.getItem(LS_EXPANDED_KEY)) || {} } catch { return {} }
+  try {
+    const stored = JSON.parse(localStorage.getItem(LS_EXPANDED_KEY)) || {}
+    // Only restore folder expansion, not files — file examples require a slow dry-run fetch
+    const folders = {}
+    for (const [key, val] of Object.entries(stored)) {
+      if (!key.endsWith('.rb')) folders[key] = val
+    }
+    return folders
+  } catch { return {} }
 }
 
 const categoryBadge = {
@@ -693,19 +701,7 @@ export default function Tests() {
     localStorage.setItem(LS_EXPANDED_KEY, JSON.stringify(expanded))
   }, [expanded])
 
-  // On mount, fetch examples for any files that were expanded in localStorage
-  React.useEffect(() => {
-    const stored = loadStoredExpanded()
-    Object.entries(stored).forEach(([path, isOpen]) => {
-      if (isOpen && path.endsWith('_spec.rb')) {
-        api.get(`/tests/examples?target=${encodeURIComponent(path)}`).then((data) => {
-          setFileExamples((prev) => ({ ...prev, [path]: data.examples || [] }))
-        }).catch(() => {
-          setFileExamples((prev) => ({ ...prev, [path]: [] }))
-        })
-      }
-    })
-  }, [])
+  // Don't auto-fetch examples on mount — they load lazily when the user expands a file
 
   // Poll when running
   React.useEffect(() => {
