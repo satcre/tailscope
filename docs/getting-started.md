@@ -1,5 +1,7 @@
 # Getting Started
 
+> **Early stage.** Tailscope is under active development and has not been battle-tested in production. APIs, configuration, and internal behavior may change.
+
 ## Installation
 
 Add Tailscope to your Gemfile. It should only run in development:

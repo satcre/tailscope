@@ -12,6 +12,8 @@ Visit `http://localhost:3000/tailscope` (or wherever your Rails app runs). The d
 
 The default landing page. Shows an aggregated view of all detected problems across all categories.
 
+![Issues Dashboard](screenshots/issues-dashboard.png)
+
 **Features:**
 - Severity filter tabs: All, Critical, Warning, Info
 - Issue cards with title, description, occurrence count, and total duration

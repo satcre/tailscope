@@ -2,6 +2,8 @@
 
 Development profiler and debugger for Ruby on Rails. Captures slow queries, N+1 patterns, slow requests, runtime errors, and code smells — then presents them in a web dashboard with source-level detail, suggested fixes, and one-click editor integration.
 
+> **Early stage.** Tailscope is under active development and has not been battle-tested in production. APIs, configuration, and internal behavior may change. Use in development environments only.
+
 ## Features
 
 - **Slow Query Detection** -- Records SQL queries exceeding a configurable threshold with exact source locations
@@ -33,9 +35,27 @@ rails generate tailscope:install
 
 Start your Rails server and visit **`/tailscope`** in your browser.
 
-## Screenshot
+## Screenshots
 
-The web dashboard shows an issues overview with severity levels, occurrence counts, and suggested fixes. Click any issue to see the source code, or open it directly in your editor.
+### Issues Dashboard
+
+Aggregated issues with severity counts, filtering, SQL detail, and suggested fixes.
+
+![Issues Dashboard](docs/screenshots/issues-dashboard.png)
+
+<!-- Add more screenshots as they become available:
+### Queries
+![Queries](docs/screenshots/queries.png)
+
+### Requests
+![Requests](docs/screenshots/requests.png)
+
+### Errors
+![Errors](docs/screenshots/errors.png)
+
+### Debugger
+![Debugger](docs/screenshots/debugger.png)
+-->
 
 ## Documentation
 
@@ -51,7 +71,6 @@ The web dashboard shows an issues overview with severity levels, occurrence coun
 | [CLI Reference](docs/cli.md) | Command-line interface |
 | [API Reference](docs/api.md) | REST API endpoints |
 | [Architecture](docs/architecture.md) | Internal design and data flow |
-| [Contributing](docs/contributing.md) | Development setup and guidelines |
 
 ## How It Works
 
