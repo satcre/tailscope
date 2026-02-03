@@ -16,7 +16,12 @@ module Tailscope
         payload = event.payload
         return if payload[:controller]&.start_with?("Tailscope::")
 
-        duration_ms = event.duration
+        req_start = Thread.current[:tailscope_request_start]
+        duration_ms = if req_start
+          (Process.clock_gettime(Process::CLOCK_MONOTONIC) - req_start) * 1000.0
+        else
+          event.duration
+        end
         request_id = Thread.current[:tailscope_request_id]
 
         source_file, source_line = resolve_source(payload[:controller], payload[:action])

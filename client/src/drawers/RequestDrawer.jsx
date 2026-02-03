@@ -34,6 +34,7 @@ function Timeline({ totalMs, events }) {
     view: 'bg-blue-400',
     callback: 'bg-orange-400',
     action: 'bg-cyan-400',
+    middleware: 'bg-gray-400',
     http: 'bg-violet-400',
     job: 'bg-indigo-400',
     mailer: 'bg-pink-400',
@@ -58,6 +59,7 @@ function Timeline({ totalMs, events }) {
         })}
       </div>
       <div className="flex gap-3 mt-1.5 text-xs text-gray-500 flex-wrap">
+        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-gray-400 inline-block" /> Middleware</span>
         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-blue-400 inline-block" /> View</span>
         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-amber-400 inline-block" /> DB</span>
         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-cyan-400 inline-block" /> Action</span>
@@ -76,21 +78,28 @@ function TraceList({ totalMs, events }) {
     .filter((e) => e.startMs != null)
     .sort((a, b) => a.startMs - b.startMs)
 
-  // Build full trace with gaps
+  // Build full trace with gaps, giving each gap a context-aware label
   const trace = []
   let cursor = 0
+  let seenAction = false
+  let seenCallback = false
 
   sorted.forEach((ev) => {
     const start = Math.max(ev.startMs, 0)
     if (start > cursor + 0.5) {
-      trace.push({ type: 'app', startMs: cursor, durationMs: start - cursor })
+      let gapLabel = 'Middleware & routing'
+      if (seenAction) gapLabel = 'Response & after-callbacks'
+      else if (seenCallback) gapLabel = 'Between callbacks'
+      trace.push({ type: 'app', startMs: cursor, durationMs: start - cursor, gapLabel })
     }
+    if (ev.type === 'action') seenAction = true
+    if (ev.type === 'callback') seenCallback = true
     trace.push(ev)
     cursor = Math.max(cursor, start + ev.durationMs)
   })
 
   if (cursor < totalMs - 0.5) {
-    trace.push({ type: 'app', startMs: cursor, durationMs: totalMs - cursor })
+    trace.push({ type: 'app', startMs: cursor, durationMs: totalMs - cursor, gapLabel: 'Response & after-callbacks' })
   }
 
   const typeColors = {
@@ -98,6 +107,7 @@ function TraceList({ totalMs, events }) {
     view: 'border-blue-300 bg-blue-50',
     callback: 'border-orange-300 bg-orange-50',
     action: 'border-cyan-300 bg-cyan-50',
+    middleware: 'border-gray-300 bg-gray-50',
     http: 'border-violet-300 bg-violet-50',
     job: 'border-indigo-300 bg-indigo-50',
     mailer: 'border-pink-300 bg-pink-50',
@@ -110,6 +120,7 @@ function TraceList({ totalMs, events }) {
     view: { label: 'VIEW', cls: 'bg-blue-100 text-blue-800' },
     callback: { label: 'CB', cls: 'bg-orange-100 text-orange-800' },
     action: { label: 'ACTION', cls: 'bg-cyan-100 text-cyan-800' },
+    middleware: { label: 'MW', cls: 'bg-gray-100 text-gray-800' },
     http: { label: 'HTTP', cls: 'bg-violet-100 text-violet-800' },
     job: { label: 'JOB', cls: 'bg-indigo-100 text-indigo-800' },
     mailer: { label: 'MAIL', cls: 'bg-pink-100 text-pink-800' },
@@ -124,23 +135,22 @@ function TraceList({ totalMs, events }) {
         {trace.map((ev, i) => {
           const badge = typeBadge[ev.type] || { label: ev.type, cls: 'bg-gray-100 text-gray-800' }
           return (
-            <div key={i} className={`border rounded px-2.5 py-1.5 ${typeColors[ev.type] || ''}`}>
-              <div className="flex items-center gap-2">
+            <div key={i} className={`border rounded px-2.5 py-1.5 min-w-0 ${typeColors[ev.type] || ''}`}>
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs text-gray-400 font-mono w-14 shrink-0 text-right">{ev.startMs.toFixed(1)}ms</span>
-                <span className={`px-1.5 py-0.5 text-xs font-bold rounded ${badge.cls}`}>{badge.label}</span>
+                <span className={`px-1.5 py-0.5 text-xs font-bold rounded shrink-0 ${badge.cls}`}>{badge.label}</span>
                 <DurationBadge ms={ev.durationMs} />
                 {ev.type === 'app' ? (
                   <span className="text-xs text-emerald-700 italic">
-                    Application code (controller, callbacks, Ruby)
-                    {ev.sourceFile && <> — {ev.sourceFile.replace(/.*\/app\//, 'app/')}</>}
+                    {ev.gapLabel || 'Application code'}
                   </span>
                 ) : (
-                  <span className="text-xs font-mono text-gray-700 truncate">{ev.label}</span>
+                  <span className="text-xs font-mono text-gray-700 break-all">{ev.label}</span>
                 )}
               </div>
               {ev.sourceFile && ev.type !== 'app' && (
-                <div className="mt-1 ml-16 flex items-center gap-2">
-                  <span className="text-xs font-mono text-blue-600">
+                <div className="mt-1 ml-16 flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-mono text-blue-600 break-all">
                     {ev.sourceFile.replace(/.*\/app\//, 'app/')}:{ev.sourceLine}
                     {ev.sourceMethod && <span className="text-gray-400"> in {ev.sourceMethod}</span>}
                   </span>
@@ -197,17 +207,22 @@ export default function RequestDrawer({ requestId }) {
   })
 
   // Compute breakdown from actual recorded data
+  // Note: action spans contain DB/view/HTTP inside them, so we exclude action
+  // from the breakdown to avoid double-counting. The "App Code" remainder
+  // covers action body logic + middleware/routing overhead.
   const views = (data.services || []).filter((s) => s.category === 'view')
   const callbacks = (data.services || []).filter((s) => s.category === 'callback')
-  const actions = (data.services || []).filter((s) => s.category === 'action')
-  const otherServices = (data.services || []).filter((s) => s.category !== 'view' && s.category !== 'callback' && s.category !== 'action')
+  const middlewares = (data.services || []).filter((s) => s.category === 'middleware')
+  const otherServices = (data.services || []).filter((s) =>
+    s.category !== 'view' && s.category !== 'callback' && s.category !== 'action' && s.category !== 'middleware'
+  )
 
   const actualDbMs = (data.queries || []).reduce((sum, q) => sum + (q.duration_ms || 0), 0)
   const actualViewMs = views.reduce((sum, s) => sum + (s.duration_ms || 0), 0)
   const callbackMs = callbacks.reduce((sum, s) => sum + (s.duration_ms || 0), 0)
-  const actionMs = actions.reduce((sum, s) => sum + (s.duration_ms || 0), 0)
+  const middlewareMs = middlewares.reduce((sum, s) => sum + (s.duration_ms || 0), 0)
   const serviceMs = otherServices.reduce((sum, s) => sum + (s.duration_ms || 0), 0)
-  const appMs = Math.max(0, totalMs - actualViewMs - actualDbMs - callbackMs - actionMs - serviceMs)
+  const appMs = Math.max(0, totalMs - actualViewMs - actualDbMs - callbackMs - middlewareMs - serviceMs)
 
   const pct = (ms) => (ms / totalMs * 100).toFixed(1)
 
@@ -220,9 +235,9 @@ export default function RequestDrawer({ requestId }) {
   }
 
   const segments = [
-    { label: 'View', ms: actualViewMs, pct: pct(actualViewMs), color: 'bg-blue-500', dot: 'bg-blue-500' },
-    { label: 'DB', ms: actualDbMs, pct: pct(actualDbMs), color: 'bg-amber-500', dot: 'bg-amber-500' },
-    { label: 'Action', ms: actionMs, pct: pct(actionMs), color: 'bg-cyan-500', dot: 'bg-cyan-500', hide: actionMs === 0 },
+    { label: 'Middleware', ms: middlewareMs, pct: pct(middlewareMs), color: 'bg-gray-500', dot: 'bg-gray-500', hide: middlewareMs === 0 },
+    { label: 'View', ms: actualViewMs, pct: pct(actualViewMs), color: 'bg-blue-500', dot: 'bg-blue-500', hide: actualViewMs === 0 },
+    { label: 'DB', ms: actualDbMs, pct: pct(actualDbMs), color: 'bg-amber-500', dot: 'bg-amber-500', hide: actualDbMs === 0 },
     { label: 'Callbacks', ms: callbackMs, pct: pct(callbackMs), color: 'bg-orange-500', dot: 'bg-orange-500', hide: callbackMs === 0 },
     { label: 'Services', ms: serviceMs, pct: pct(serviceMs), color: 'bg-violet-500', dot: 'bg-violet-500', hide: serviceMs === 0 },
     { label: 'App Code', ms: appMs, pct: pct(appMs), color: 'bg-emerald-500', dot: 'bg-emerald-500' },

@@ -21,6 +21,7 @@ module Tailscope
         Tailscope::Subscribers::MailerSubscriber.attach!
         Tailscope::Subscribers::CacheSubscriber.attach!
         Tailscope::Subscribers::ViewSubscriber.attach!
+        Tailscope::Subscribers::ControllerSubscriber.attach!
       end
     end
 

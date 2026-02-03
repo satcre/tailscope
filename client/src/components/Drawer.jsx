@@ -22,7 +22,7 @@ export default function Drawer({ isOpen, onClose, title, children, wide }) {
           <h2 className="text-lg font-bold text-gray-900">{title}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
         </div>
-        <div className="p-6">{children}</div>
+        <div className="p-6 overflow-x-hidden min-w-0">{children}</div>
       </div>
     </>
   )
