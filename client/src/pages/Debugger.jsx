@@ -18,31 +18,30 @@ function FileTree({ onSelectFile, currentFile, breakpoints }) {
   const [expanded, setExpanded] = React.useState(loadStoredFolders)
   const [rootPath, setRootPath] = React.useState(null)
 
-  const loadDir = React.useCallback(async (path) => {
-    const p = path ? `?path=${encodeURIComponent(path)}` : ''
+  const loadDir = React.useCallback(async (dirPath) => {
+    const p = dirPath ? `?path=${encodeURIComponent(dirPath)}` : ''
     const data = await api.get(`/debugger/browse${p}`)
     if (data.is_directory) {
       setTree((prev) => ({ ...prev, [data.path]: data }))
-      if (!rootPath) setRootPath(data.path)
     }
     return data
-  }, [rootPath])
+  }, [])
 
-  // Load root directory and auto-expand key directories on first load
+  // Load root + restore expanded folders on mount
   React.useEffect(() => {
-    loadDir('').then((root) => {
+    api.get('/debugger/browse').then((root) => {
       if (!root?.is_directory) return
+      setRootPath(root.path)
+      setTree((prev) => ({ ...prev, [root.path]: root }))
+
       const stored = loadStoredFolders()
       const hasStored = Object.values(stored).some(Boolean)
       if (hasStored) {
-        // Restore previously expanded folders
-        Object.entries(stored).forEach(([path, isOpen]) => {
-          if (isOpen) loadDir(path).catch(() => {})
+        Object.entries(stored).forEach(([p, isOpen]) => {
+          if (isOpen) loadDir(p).catch(() => {})
         })
       } else {
-        // Auto-expand app/ and lib/ on first visit
-        const autoExpand = ['app', 'lib']
-        autoExpand.forEach((dir) => {
+        ;['app', 'lib'].forEach((dir) => {
           if (root.directories.includes(dir)) {
             const full = `${root.path}/${dir}`
             setExpanded((prev) => ({ ...prev, [full]: true }))
@@ -51,7 +50,7 @@ function FileTree({ onSelectFile, currentFile, breakpoints }) {
         })
       }
     }).catch(() => {})
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loadDir])
 
   // Persist folder expanded state
   React.useEffect(() => {
@@ -362,10 +361,8 @@ export default function Debugger() {
   React.useEffect(() => {
     loadData()
     const interval = setInterval(() => {
-      api.get('/debugger/poll').then((d) => {
-        if (d.active_sessions?.length > 0) loadData()
-      }).catch(() => {})
-    }, 1500)
+      loadData()
+    }, 2000)
     return () => clearInterval(interval)
   }, [loadData])
 
