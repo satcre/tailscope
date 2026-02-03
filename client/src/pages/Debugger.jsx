@@ -7,9 +7,15 @@ import DebuggerSessionDrawer from '../drawers/DebuggerSessionDrawer'
 import OpenInEditor from '../components/OpenInEditor'
 import OpenInDebugger from '../components/OpenInDebugger'
 
+const LS_DEBUGGER_FOLDERS_KEY = 'tailscope_debugger_folders'
+
+function loadStoredFolders() {
+  try { return JSON.parse(localStorage.getItem(LS_DEBUGGER_FOLDERS_KEY)) || {} } catch { return {} }
+}
+
 function FileTree({ onSelectFile, currentFile, breakpoints }) {
   const [tree, setTree] = React.useState({})
-  const [expanded, setExpanded] = React.useState({})
+  const [expanded, setExpanded] = React.useState(loadStoredFolders)
   const [rootPath, setRootPath] = React.useState(null)
 
   const loadDir = React.useCallback(async (path) => {
@@ -23,6 +29,21 @@ function FileTree({ onSelectFile, currentFile, breakpoints }) {
   }, [rootPath])
 
   React.useEffect(() => { loadDir('') }, [loadDir])
+
+  // Persist folder expanded state
+  React.useEffect(() => {
+    localStorage.setItem(LS_DEBUGGER_FOLDERS_KEY, JSON.stringify(expanded))
+  }, [expanded])
+
+  // On mount, load data for any previously expanded folders
+  React.useEffect(() => {
+    const stored = loadStoredFolders()
+    Object.entries(stored).forEach(([path, isOpen]) => {
+      if (isOpen && !tree[path]) {
+        loadDir(path).catch(() => {})
+      }
+    })
+  }, [rootPath]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggle = async (path) => {
     if (expanded[path]) {
@@ -92,7 +113,7 @@ function FileTree({ onSelectFile, currentFile, breakpoints }) {
   )
 }
 
-function CodeViewer({ filePath, breakpointLines, onToggleBreakpoint, activeSessions }) {
+function CodeViewer({ filePath, breakpointLines, onToggleBreakpoint, activeSessions, scrollToLine }) {
   const [fileData, setFileData] = React.useState(null)
   const [loading, setLoading] = React.useState(false)
   const [conditionLine, setConditionLine] = React.useState(null)
@@ -107,6 +128,15 @@ function CodeViewer({ filePath, breakpointLines, onToggleBreakpoint, activeSessi
       .catch(() => setFileData(null))
       .finally(() => setLoading(false))
   }, [filePath])
+
+  // Scroll to target line after file loads
+  React.useEffect(() => {
+    if (!fileData || !scrollToLine) return
+    const el = lineRefs.current[scrollToLine]
+    if (el) {
+      setTimeout(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }), 50)
+    }
+  }, [fileData, scrollToLine])
 
   const highlightedLines = useHighlightedLines(fileData?.lines, filePath)
 
@@ -168,7 +198,7 @@ function CodeViewer({ filePath, breakpointLines, onToggleBreakpoint, activeSessi
                 <React.Fragment key={lineNum}>
                   <tr
                     ref={(el) => { lineRefs.current[lineNum] = el }}
-                    className={hasSession ? 'bg-yellow-900/40' : hasBp ? 'bg-red-900/20' : ''}
+                    className={hasSession ? 'bg-yellow-900/40' : hasBp ? 'bg-red-900/20' : scrollToLine === lineNum ? 'bg-blue-900/30' : ''}
                   >
                     <td
                       onClick={(e) => handleLineClick(lineNum, e)}
@@ -180,7 +210,7 @@ function CodeViewer({ filePath, breakpointLines, onToggleBreakpoint, activeSessi
                         <span className="text-gray-500">{lineNum}</span>
                       </span>
                     </td>
-                    <td className="px-3 py-0.5 text-gray-300 whitespace-pre"><HighlightedCode html={highlightedLines[i] || content} /></td>
+                    <td className="px-3 py-0.5 text-gray-300 whitespace-pre-wrap break-all"><HighlightedCode html={highlightedLines[i] || content} /></td>
                   </tr>
                   {conditionLine === lineNum && (
                     <tr>
@@ -211,6 +241,75 @@ function CodeViewer({ filePath, breakpointLines, onToggleBreakpoint, activeSessi
   )
 }
 
+function TabBar({ openTabs, activeTab, switchTab, closeTab, closeAllTabs }) {
+  const scrollRef = React.useRef(null)
+  const [canScrollLeft, setCanScrollLeft] = React.useState(false)
+  const [canScrollRight, setCanScrollRight] = React.useState(false)
+
+  const updateScroll = React.useCallback(() => {
+    const el = scrollRef.current
+    if (!el) return
+    setCanScrollLeft(el.scrollLeft > 0)
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1)
+  }, [])
+
+  React.useEffect(() => {
+    updateScroll()
+    const el = scrollRef.current
+    if (el) el.addEventListener('scroll', updateScroll)
+    const obs = new ResizeObserver(updateScroll)
+    if (el) obs.observe(el)
+    return () => { if (el) el.removeEventListener('scroll', updateScroll); obs.disconnect() }
+  }, [updateScroll, openTabs])
+
+  const scroll = (dir) => {
+    const el = scrollRef.current
+    if (el) el.scrollBy({ left: dir * 200, behavior: 'smooth' })
+  }
+
+  return (
+    <div className="flex bg-gray-100 border-b shrink-0 items-stretch">
+      {canScrollLeft && (
+        <button onClick={() => scroll(-1)} className="px-1 text-gray-400 hover:text-gray-700 hover:bg-gray-200 border-r border-gray-200 shrink-0">
+          <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor"><path d="M10 3L5 8l5 5V3z" /></svg>
+        </button>
+      )}
+      <div ref={scrollRef} className="flex overflow-x-auto flex-1 scrollbar-hide" style={{ scrollbarWidth: 'none' }}>
+        {openTabs.map((tab) => {
+          const name = tab.split('/').pop()
+          const isActive = tab === activeTab
+          return (
+            <button
+              key={tab}
+              onClick={() => switchTab(tab)}
+              className={`flex items-center gap-1 px-3 py-1.5 text-xs border-r border-gray-200 shrink-0 max-w-[180px] ${isActive ? 'bg-white text-gray-900 font-medium' : 'text-gray-500 hover:bg-gray-50'}`}
+              title={tab}
+            >
+              <span className="truncate">{name}</span>
+              <span
+                onClick={(e) => closeTab(tab, e)}
+                className="ml-1 text-gray-400 hover:text-red-500 hover:bg-gray-200 rounded px-0.5"
+              >✕</span>
+            </button>
+          )
+        })}
+      </div>
+      {canScrollRight && (
+        <button onClick={() => scroll(1)} className="px-1 text-gray-400 hover:text-gray-700 hover:bg-gray-200 border-l border-gray-200 shrink-0">
+          <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor"><path d="M6 3l5 5-5 5V3z" /></svg>
+        </button>
+      )}
+      {openTabs.length > 1 && (
+        <button
+          onClick={closeAllTabs}
+          className="px-2 text-gray-400 hover:text-red-500 hover:bg-gray-200 border-l border-gray-200 shrink-0 text-xs"
+          title="Close all tabs"
+        >✕ All</button>
+      )}
+    </div>
+  )
+}
+
 const LS_TABS_KEY = 'tailscope_debugger_tabs'
 const LS_ACTIVE_KEY = 'tailscope_debugger_active'
 
@@ -231,6 +330,7 @@ export default function Debugger() {
   const [treeCollapsed, setTreeCollapsed] = React.useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false)
   const [selectedSession, setSelectedSession] = React.useState(null)
+  const [scrollToLine, setScrollToLine] = React.useState(null)
   const didHandleParams = React.useRef(false)
 
   React.useEffect(() => {
@@ -280,7 +380,9 @@ export default function Debugger() {
     const fileParam = searchParams.get('file')
     if (fileParam) {
       didHandleParams.current = true
+      const lineParam = searchParams.get('line')
       selectFile(fileParam)
+      if (lineParam) setScrollToLine(parseInt(lineParam, 10))
       // Clear the params so they don't re-trigger on navigation
       setSearchParams({}, { replace: true })
     }
@@ -300,8 +402,14 @@ export default function Debugger() {
     })
   }, [activeTab, loadFileBpLines])
 
+  const closeAllTabs = React.useCallback(() => {
+    setOpenTabs([])
+    setActiveTab(null)
+  }, [])
+
   const switchTab = React.useCallback((filePath) => {
     setActiveTab(filePath)
+    setScrollToLine(null)
     loadFileBpLines(filePath)
   }, [loadFileBpLines])
 
@@ -382,32 +490,14 @@ export default function Debugger() {
         {/* Code Viewer with Tabs */}
         <div className="flex-1 bg-white rounded-lg shadow overflow-hidden flex flex-col min-w-0">
           {openTabs.length > 0 && (
-            <div className="flex bg-gray-100 border-b overflow-x-auto shrink-0">
-              {openTabs.map((tab) => {
-                const name = tab.split('/').pop()
-                const isActive = tab === activeTab
-                return (
-                  <button
-                    key={tab}
-                    onClick={() => switchTab(tab)}
-                    className={`flex items-center gap-1 px-3 py-1.5 text-xs border-r border-gray-200 shrink-0 max-w-[180px] ${isActive ? 'bg-white text-gray-900 font-medium' : 'text-gray-500 hover:bg-gray-50'}`}
-                    title={tab}
-                  >
-                    <span className="truncate">{name}</span>
-                    <span
-                      onClick={(e) => closeTab(tab, e)}
-                      className="ml-1 text-gray-400 hover:text-red-500 hover:bg-gray-200 rounded px-0.5"
-                    >✕</span>
-                  </button>
-                )
-              })}
-            </div>
+            <TabBar openTabs={openTabs} activeTab={activeTab} switchTab={switchTab} closeTab={closeTab} closeAllTabs={closeAllTabs} />
           )}
           <CodeViewer
             filePath={activeTab}
             breakpointLines={fileBpLines}
             onToggleBreakpoint={toggleBreakpoint}
             activeSessions={data.active_sessions}
+            scrollToLine={scrollToLine}
           />
         </div>
 

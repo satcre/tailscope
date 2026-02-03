@@ -24,15 +24,15 @@ export default function SourceViewer({ file, line }) {
   if (!source) return <div className="text-sm text-red-400">Could not load source</div>
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-1">
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between mb-1 shrink-0">
         <div className="text-xs text-gray-500 font-mono">{source.short_path}</div>
         <div className="flex items-center gap-1">
           <OpenInEditor file={file} line={line} />
           <OpenInDebugger file={file} line={line} />
         </div>
       </div>
-      <div className="bg-gray-900 rounded overflow-x-auto">
+      <div className="bg-gray-900 rounded overflow-y-auto flex-1">
         <table className="text-sm font-mono w-full">
           <tbody>
             {source.lines.map((l, i) => (
@@ -40,7 +40,7 @@ export default function SourceViewer({ file, line }) {
                 <td className="px-3 py-0.5 text-right text-gray-500 select-none w-12 border-r border-gray-700">
                   {l.number}
                 </td>
-                <td className="px-3 py-0.5 text-gray-300 whitespace-pre"><HighlightedCode html={highlightedLines[i] || l.content} /></td>
+                <td className="px-3 py-0.5 text-gray-300 whitespace-pre-wrap break-all"><HighlightedCode html={highlightedLines[i] || l.content} /></td>
               </tr>
             ))}
           </tbody>

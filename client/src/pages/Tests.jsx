@@ -3,6 +3,13 @@ import { api } from '../api'
 import Drawer from '../components/Drawer'
 import OpenInEditor from '../components/OpenInEditor'
 import SourceViewer from '../components/SourceViewer'
+import OpenInDebugger from '../components/OpenInDebugger'
+
+const LS_EXPANDED_KEY = 'tailscope_tests_expanded'
+
+function loadStoredExpanded() {
+  try { return JSON.parse(localStorage.getItem(LS_EXPANDED_KEY)) || {} } catch { return {} }
+}
 
 const categoryBadge = {
   controller: { label: 'CTRL', cls: 'bg-blue-100 text-blue-800' },
@@ -42,7 +49,7 @@ function PlayButton({ onClick, disabled, title }) {
   )
 }
 
-function SpecTree({ node, onRun, running, results, expanded, toggleExpand, fileExamples, onExpandFile }) {
+function SpecTree({ node, onRun, running, results, expanded, toggleExpand, fileExamples, onExpandFile, onViewSource }) {
   if (node.type === 'folder') {
     const isOpen = expanded[node.path] !== false
     const fileCount = countFiles(node)
@@ -74,7 +81,7 @@ function SpecTree({ node, onRun, running, results, expanded, toggleExpand, fileE
         {isOpen && (
           <div className="ml-5 border-l border-gray-200 pl-1">
             {node.children.map((child) => (
-              <SpecTree key={child.path} node={child} onRun={onRun} running={running} results={results} expanded={expanded} toggleExpand={toggleExpand} fileExamples={fileExamples} onExpandFile={onExpandFile} />
+              <SpecTree key={child.path} node={child} onRun={onRun} running={running} results={results} expanded={expanded} toggleExpand={toggleExpand} fileExamples={fileExamples} onExpandFile={onExpandFile} onViewSource={onViewSource} />
             ))}
           </div>
         )}
@@ -137,18 +144,18 @@ function SpecTree({ node, onRun, running, results, expanded, toggleExpand, fileE
           <span className={`w-2 h-2 rounded-full shrink-0 ${hasFailed ? 'bg-red-500' : 'bg-green-500'}`} />
         )}
         <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded shrink-0 ${badge.cls}`}>{badge.label}</span>
-        <span className="text-sm font-mono text-gray-600 flex-1 truncate">{node.name}</span>
+        <span className="text-sm font-mono text-gray-600 truncate">{node.name}</span>
         {fileResults.length > 0 && (
           <span className={`text-xs font-medium ${hasFailed ? 'text-red-600' : 'text-green-600'}`}>
             {fileResults.filter(r => r.status === 'passed').length}/{fileResults.length}
           </span>
         )}
-        <OpenInEditor file={node.path} line={1} />
+        {onViewSource && <ViewSourceButton onClick={() => onViewSource(node.path, 1)} />}
         <PlayButton onClick={() => onRun(node.path)} disabled={running} title={`Run ${node.name}`} />
       </div>
       {isOpen && displayExamples.length > 0 && (
         <div className="ml-7 border-l border-gray-200 pl-2 mb-1">
-          <ExampleTree items={buildExampleTree(displayExamples)} filePath={node.path} onRun={onRun} running={running} />
+          <ExampleTree items={buildExampleTree(displayExamples)} filePath={node.path} onRun={onRun} running={running} onViewSource={onViewSource} />
         </div>
       )}
       {isOpen && displayExamples.length === 0 && fileExamples[node.path] === undefined && (
@@ -265,44 +272,56 @@ function buildExampleTree(examples) {
 
 // --- Recursive tree renderer for examples ---
 
-function ExampleTree({ items, filePath, onRun, running }) {
+function ExampleTree({ items, filePath, onRun, running, onViewSource, showActions }) {
   return (
-    <div className="space-y-0.5">
+    <div>
       {items.map((item, i) => (
         item.type === 'group'
-          ? <ExampleGroup key={i} group={item} filePath={filePath} onRun={onRun} running={running} />
-          : <ExampleLeaf key={i} example={item} filePath={filePath} onRun={onRun} running={running} />
+          ? <ExampleGroup key={i} group={item} filePath={filePath} onRun={onRun} running={running} onViewSource={onViewSource} showActions={showActions} />
+          : <ExampleLeaf key={i} example={item} filePath={filePath} onRun={onRun} running={running} onViewSource={onViewSource} showActions={showActions} />
       ))}
     </div>
   )
 }
 
-function ExampleGroup({ group, filePath, onRun, running }) {
+function ExampleGroup({ group, filePath, onRun, running, onViewSource, showActions }) {
   const [open, setOpen] = React.useState(true)
 
-  // Compute aggregate status for the group
   const allExamples = flattenExamples(group.children)
   const hasResults = allExamples.some((e) => e.status)
   const hasFailed = allExamples.some((e) => e.status === 'failed')
   const allPassed = hasResults && allExamples.every((e) => e.status === 'passed' || e.status === 'pending')
 
+  // Build a target for running all examples in this group
+  const firstExample = allExamples[0]
+  const fp = filePath || firstExample?.file_path?.replace('./', '')
+  const lines = allExamples.map((e) => e.line_number).filter(Boolean)
+  const minLine = lines.length > 0 ? Math.min(...lines) : null
+  const maxLine = lines.length > 0 ? Math.max(...lines) : null
+
   return (
     <div>
       <div
-        className="flex items-center gap-1 py-0.5 cursor-pointer hover:bg-gray-50 rounded"
+        className="flex items-center gap-1 py-px px-0.5 -mx-0.5 cursor-pointer hover:bg-gray-50 rounded group/row"
         onClick={() => setOpen(!open)}
       >
-        <svg className={`w-3 h-3 text-gray-400 transition-transform ${open ? 'rotate-90' : ''}`} viewBox="0 0 16 16" fill="currentColor">
+        <svg className={`w-2.5 h-2.5 text-gray-400 transition-transform shrink-0 ${open ? 'rotate-90' : ''}`} viewBox="0 0 16 16" fill="currentColor">
           <path d="M6 3l5 5-5 5V3z" />
         </svg>
         {hasResults && (
           <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${hasFailed ? 'bg-red-500' : allPassed ? 'bg-green-500' : 'bg-gray-300'}`} />
         )}
         <span className="text-xs font-medium text-gray-500">{group.label}</span>
+        {fp && minLine && onViewSource && (
+          <ViewSourceButton onClick={() => onViewSource(fp, minLine)} />
+        )}
+        {fp && minLine && (
+          <PlayButton onClick={() => onRun(`${fp}:${minLine}`)} disabled={running} title={`Run ${group.label}`} />
+        )}
       </div>
       {open && (
-        <div className="ml-3 border-l border-gray-100 pl-2">
-          <ExampleTree items={group.children} filePath={filePath} onRun={onRun} running={running} />
+        <div className="ml-2.5 border-l border-gray-100 pl-1.5">
+          <ExampleTree items={group.children} filePath={filePath} onRun={onRun} running={running} onViewSource={onViewSource} showActions={showActions} />
         </div>
       )}
     </div>
@@ -318,17 +337,17 @@ function flattenExamples(items) {
   return result
 }
 
-function ExampleLeaf({ example, filePath, onRun, running }) {
+function ExampleLeaf({ example, filePath, onRun, running, onViewSource, showActions }) {
   const [showError, setShowError] = React.useState(false)
   const dot = statusDot[example.status] || 'bg-gray-300'
   const fp = filePath || example.file_path?.replace('./', '')
 
   return (
     <div>
-      <div className="flex items-center gap-1.5 py-0.5 text-xs">
-        <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
+      <div className="flex items-center gap-1 py-px px-0.5 -mx-0.5 hover:bg-gray-50 rounded group/row text-xs">
+        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />
         <span
-          className={`flex-1 ${example.status === 'failed' ? 'text-red-700 cursor-pointer hover:underline' : example.status === 'pending' ? 'text-yellow-700 italic' : 'text-gray-600'}`}
+          className={`${example.status === 'failed' ? 'text-red-700 cursor-pointer hover:underline' : example.status === 'pending' ? 'text-yellow-700 italic' : 'text-gray-600'}`}
           onClick={example.exception ? () => setShowError(!showError) : undefined}
         >
           {example.description}
@@ -336,13 +355,20 @@ function ExampleLeaf({ example, filePath, onRun, running }) {
         {example.run_time != null && (
           <span className="text-gray-400 font-mono shrink-0">{(example.run_time * 1000).toFixed(1)}ms</span>
         )}
-        {fp && <OpenInEditor file={fp} line={example.line_number} />}
+        {fp && onViewSource && example.line_number && (
+          <ViewSourceButton onClick={() => onViewSource(fp, example.line_number)} />
+        )}
+        {showActions && fp && (
+          <span className="inline-flex items-center gap-0.5 shrink-0">
+            <OpenInEditor file={fp} line={example.line_number} />
+          </span>
+        )}
         {fp && example.line_number && (
           <PlayButton onClick={() => onRun(`${fp}:${example.line_number}`)} disabled={running} title={`Run :${example.line_number}`} />
         )}
       </div>
       {showError && example.exception && (
-        <div className="ml-4 mt-1 mb-2 p-2 bg-red-50 border border-red-200 rounded text-xs">
+        <div className="ml-3 mt-0.5 mb-1 p-2 bg-red-50 border border-red-200 rounded text-xs">
           <div className="font-semibold text-red-800">{example.exception.class}</div>
           <div className="text-red-700 mt-0.5 whitespace-pre-wrap">{example.exception.message}</div>
           {example.exception.backtrace && (
@@ -355,6 +381,21 @@ function ExampleLeaf({ example, filePath, onRun, running }) {
     </div>
   )
 }
+
+function ViewSourceButton({ onClick }) {
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); onClick() }}
+      className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-200 shrink-0"
+      title="View source"
+    >
+      <svg className="w-3.5 h-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+      </svg>
+    </button>
+  )
+}
+
 
 function countFiles(node) {
   if (node.type === 'file') return 1
@@ -381,7 +422,7 @@ function NotAvailable() {
 
 // --- Drawer content: results + console ---
 
-function ResultsDrawer({ runStatus, isRunning, onCancel }) {
+function ResultsDrawer({ runStatus, isRunning, onCancel, onViewSource }) {
   const [tab, setTab] = React.useState('results')
   const consoleRef = React.useRef(null)
 
@@ -454,7 +495,7 @@ function ResultsDrawer({ runStatus, isRunning, onCancel }) {
             </div>
           )}
           {fileKeys.map((filePath) => (
-            <FileResultGroup key={filePath} filePath={filePath} examples={byFile[filePath]} />
+            <FileResultGroup key={filePath} filePath={filePath} examples={byFile[filePath]} onViewSource={onViewSource} />
           ))}
           {examples.length === 0 && !isRunning && runStatus.status !== 'error' && (
             <div className="text-gray-400 text-sm text-center py-8">No results yet.</div>
@@ -474,7 +515,7 @@ function ResultsDrawer({ runStatus, isRunning, onCancel }) {
   )
 }
 
-function FileResultGroup({ filePath, examples }) {
+function FileResultGroup({ filePath, examples, onViewSource }) {
   const [showSource, setShowSource] = React.useState(false)
   const fileFailed = examples.some((e) => e.status === 'failed')
   const displayPath = filePath.replace('./', '')
@@ -502,7 +543,7 @@ function FileResultGroup({ filePath, examples }) {
         </div>
       )}
       <div className="ml-2 mt-0.5">
-        <ExampleTree items={buildExampleTree(examples)} filePath={displayPath} onRun={() => {}} running={false} />
+        <ExampleTree items={buildExampleTree(examples)} filePath={displayPath} onRun={() => {}} running={false} onViewSource={onViewSource} showActions />
       </div>
     </div>
   )
@@ -555,12 +596,32 @@ export default function Tests() {
   const [loading, setLoading] = React.useState(true)
   const [runStatus, setRunStatus] = React.useState(null)
   const [drawerOpen, setDrawerOpen] = React.useState(false)
-  const [expanded, setExpanded] = React.useState({})
+  const [expanded, setExpanded] = React.useState(loadStoredExpanded)
   const [fileExamples, setFileExamples] = React.useState({})
+  const [sourceDrawer, setSourceDrawer] = React.useState({ open: false, file: null, line: null })
   const pollingRef = React.useRef(null)
 
   React.useEffect(() => {
     api.get('/tests/specs').then(setSpecs).finally(() => setLoading(false))
+  }, [])
+
+  // Persist expanded state to localStorage
+  React.useEffect(() => {
+    localStorage.setItem(LS_EXPANDED_KEY, JSON.stringify(expanded))
+  }, [expanded])
+
+  // On mount, fetch examples for any files that were expanded in localStorage
+  React.useEffect(() => {
+    const stored = loadStoredExpanded()
+    Object.entries(stored).forEach(([path, isOpen]) => {
+      if (isOpen && path.endsWith('_spec.rb')) {
+        api.get(`/tests/examples?target=${encodeURIComponent(path)}`).then((data) => {
+          setFileExamples((prev) => ({ ...prev, [path]: data.examples || [] }))
+        }).catch(() => {
+          setFileExamples((prev) => ({ ...prev, [path]: [] }))
+        })
+      }
+    })
   }, [])
 
   // Poll when running
@@ -616,6 +677,10 @@ export default function Tests() {
 
   const handleCancel = () => {
     api.post('/tests/cancel')
+  }
+
+  const handleViewSource = (file, line) => {
+    setSourceDrawer({ open: true, file, line: line || 1 })
   }
 
   const handleExpandFile = (path) => {
@@ -698,6 +763,7 @@ export default function Tests() {
             toggleExpand={toggleExpand}
             fileExamples={fileExamples}
             onExpandFile={handleExpandFile}
+            onViewSource={handleViewSource}
           />
         ))}
         {(!specs?.tree || specs.tree.length === 0) && (
@@ -707,7 +773,22 @@ export default function Tests() {
 
       {/* Results drawer */}
       <Drawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} title={drawerTitle}>
-        <ResultsDrawer runStatus={runStatus} isRunning={isRunning} onCancel={handleCancel} />
+        <ResultsDrawer runStatus={runStatus} isRunning={isRunning} onCancel={handleCancel} onViewSource={handleViewSource} />
+      </Drawer>
+
+      {/* Source viewer drawer */}
+      <Drawer isOpen={sourceDrawer.open} onClose={() => setSourceDrawer({ open: false, file: null, line: null })} title={sourceDrawer.file || 'Source'}>
+        {sourceDrawer.file && (
+          <div className="flex flex-col h-full">
+            <div className="flex items-center gap-2 mb-3">
+              <OpenInEditor file={sourceDrawer.file} line={sourceDrawer.line} />
+              <OpenInDebugger file={sourceDrawer.file} line={sourceDrawer.line} />
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <SourceViewer file={sourceDrawer.file} line={sourceDrawer.line} />
+            </div>
+          </div>
+        )}
       </Drawer>
     </div>
   )
