@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tailscope</title>
+  <%= csrf_meta_tags %>
+  <link rel="stylesheet" href="/tailscope/app.css">
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div id="root"></div>
+  <script>
+    window.TAILSCOPE_CONFIG = {
+      sourceRoot: "<%= Tailscope.configuration.source_root %>",
+      debuggerEnabled: <%= Tailscope.configuration.respond_to?(:debugger_enabled) && Tailscope.configuration.debugger_enabled ? 'true' : 'true' %>
+    }
+  </script>
+  <script type="module" src="/tailscope/app.js"></script>
+</body>
+</html>
