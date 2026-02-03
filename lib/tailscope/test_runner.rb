@@ -193,7 +193,7 @@ module Tailscope
           "--no-color", target
         ]
 
-        Bundler.with_unbundled_env do
+        Bundler.with_original_env do
           pid = Process.spawn(
             { "RAILS_ENV" => "test", "DISABLE_SPRING" => "1" },
             *cmd_parts,
@@ -263,7 +263,7 @@ module Tailscope
 
         # Use unbundled_env so the child process gets a clean Bundler
         # environment and properly resolves the test group gems.
-        Bundler.with_unbundled_env do
+        Bundler.with_original_env do
           pid = Process.spawn(
             { "RAILS_ENV" => "test", "DISABLE_SPRING" => "1", "TERM" => "xterm-256color" },
             *cmd_parts,
