@@ -22,31 +22,36 @@ module Tailscope
           return render(json: { error: "File not found" }, status: :not_found)
         end
 
-        lines = File.readlines(file)
+        content = File.read(file)
+        lines = content.lines
 
         if params[:full].present?
-          start_line = 0
-          end_line = lines.size - 1
+          render json: {
+            file: file,
+            short_path: file.sub("#{source_root}/", ""),
+            highlight_line: line,
+            raw: content,
+            total_lines: lines.size,
+          }
         else
           radius = (params[:radius] || 50).to_i.clamp(10, 200)
           start_line = [line - radius, 0].max
           end_line = [line + radius, lines.size - 1].min
+          visible_lines = lines[start_line..end_line] || []
+
+          render json: {
+            file: file,
+            short_path: file.sub("#{source_root}/", ""),
+            highlight_line: line,
+            lines: visible_lines.each_with_index.map do |l, idx|
+              {
+                number: start_line + idx + 1,
+                content: l.chomp,
+                current: (start_line + idx + 1) == line,
+              }
+            end,
+          }
         end
-
-        visible_lines = lines[start_line..end_line] || []
-
-        render json: {
-          file: file,
-          short_path: file.sub("#{source_root}/", ""),
-          highlight_line: line,
-          lines: visible_lines.each_with_index.map do |content, idx|
-            {
-              number: start_line + idx + 1,
-              content: content.chomp,
-              current: (start_line + idx + 1) == line,
-            }
-          end,
-        }
       end
     end
   end

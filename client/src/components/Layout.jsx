@@ -136,7 +136,7 @@ export default function Layout({ children }) {
               <line x1="50" y1="80" x2="50" y2="92" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
               <line x1="18" y1="60" x2="30" y2="60" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
               <line x1="70" y1="60" x2="82" y2="60" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
-              <text x="84" y="72" fontFamily="system-ui, -apple-system, sans-serif" fontSize="48" fontWeight="800" fill="currentColor" letterSpacing="-1">tail<tspan fill="#EF4444">scope</tspan></text>
+              <text x="84" y="72" fontFamily="system-ui, -apple-system, sans-serif" fontSize="48" fontWeight="800" fill="currentColor" letterSpacing="-1">tail<tspan fill="#EF4444" fontFamily="'Caveat', cursive" fontSize="54" fontWeight="700" dy="2">scope</tspan></text>
               <path d="M78 60 Q88 54 98 60 Q108 66 118 60 Q128 54 138 60 Q148 66 158 60" stroke="#EF4444" strokeWidth="4" fill="none" strokeLinecap="round"/>
             </svg>
           </Link>

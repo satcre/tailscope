@@ -28,7 +28,19 @@ export default function SourceViewer({ file, line, full, coverage }) {
     }
     setLoading(true)
     api.get(`/source?file=${encodeURIComponent(file)}&line=${line}${fullParam}`)
-      .then((data) => { sourceCache[cacheKey] = data; setSource(data) })
+      .then((data) => {
+        // Convert raw text response to lines array
+        if (data.raw != null && !data.lines) {
+          const rawLines = data.raw.split('\n')
+          data.lines = rawLines.map((content, i) => ({
+            number: i + 1,
+            content,
+            current: i + 1 === data.highlight_line,
+          }))
+        }
+        sourceCache[cacheKey] = data
+        setSource(data)
+      })
       .catch(() => setSource(null))
       .finally(() => setLoading(false))
   }, [file, line, full])
