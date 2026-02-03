@@ -14,20 +14,18 @@ module Tailscope
                   :editor
 
     EDITOR_COMMANDS = {
-      vscode: "code -g {file}:{line}",
+      vscode: "code -r -g {file}:{line} {project}",
       sublime: "subl {project} {file}:{line}",
       rubymine: "mine {project} --line {line} {file}",
       nvim_terminal: "nvim +{line} {file}",
       nvim_iterm: "nvim +{line} {file}",
     }.freeze
 
-    # GUI editors that should open the project folder first
-    PROJECT_EDITORS = Set[:vscode].freeze
-
-    MAC_FALLBACK_COMMANDS = {
-      vscode: 'open -a "Visual Studio Code" --args {project} -g {file}:{line}',
-      sublime: 'open -a "Sublime Text" --args {project} {file}:{line}',
-      rubymine: 'open -a "RubyMine" --args {project} --line {line} {file}',
+    # Full path to CLI binary inside macOS .app bundles (used when CLI is not in PATH)
+    MAC_CLI_PATHS = {
+      vscode: "Visual Studio Code.app/Contents/Resources/app/bin/code",
+      sublime: "Sublime Text.app/Contents/SharedSupport/bin/subl",
+      rubymine: "RubyMine.app/Contents/MacOS/rubymine",
     }.freeze
 
     # Maps terminal editor keys to their terminal app
@@ -68,6 +66,15 @@ module Tailscope
 
     def self.windows?
       RUBY_PLATFORM =~ /mswin|mingw|cygwin/
+    end
+
+    def self.mac_cli_path(editor_sym)
+      relative = MAC_CLI_PATHS[editor_sym]
+      return nil unless relative
+
+      ["/Applications/#{relative}", File.join(Dir.home, "Applications", relative)].find do |path|
+        File.executable?(path)
+      end
     end
 
     def self.mac_app_installed?(editor_sym)

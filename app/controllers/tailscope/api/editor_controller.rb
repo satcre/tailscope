@@ -31,29 +31,27 @@ module Tailscope
 
         escaped_file = Shellwords.escape(file)
         escaped_project = Shellwords.escape(source_root)
-        base_command = command_template
+
+        # On macOS, resolve full path to CLI binary inside .app bundle
+        # since CLI tools (code, subl, mine) are often not in the server process PATH
+        resolved_template = command_template
+        if Configuration.mac? && editor_sym
+          mac_binary = Configuration.mac_cli_path(editor_sym)
+          if mac_binary
+            short_binary = Configuration::EDITOR_BINARIES[editor_sym]
+            resolved_template = command_template.sub(short_binary, Shellwords.escape(mac_binary))
+          end
+        end
+
+        base_command = resolved_template
           .gsub("{project}", escaped_project)
           .gsub("{file}", escaped_file)
           .gsub("{line}", line.to_s)
 
         begin
-          launch_editor(editor_sym, base_command, source_root, file, line)
+          launch_editor(editor_sym, base_command, source_root)
         rescue Errno::ENOENT
-          # Try macOS open -a fallback for GUI editors
-          if Configuration.mac? && editor_sym && Configuration::MAC_FALLBACK_COMMANDS[editor_sym]
-            fallback = Configuration::MAC_FALLBACK_COMMANDS[editor_sym]
-              .gsub("{project}", escaped_project)
-              .gsub("{file}", escaped_file)
-              .gsub("{line}", line.to_s)
-            begin
-              pid = spawn(fallback, [:out, :err] => "/dev/null")
-              Process.detach(pid)
-            rescue Errno::ENOENT
-              return render(json: { error: "Editor not found. Make sure #{editor_key} is installed." }, status: :unprocessable_entity)
-            end
-          else
-            return render(json: { error: "Editor command not found. Make sure the editor is installed and in your PATH." }, status: :unprocessable_entity)
-          end
+          return render(json: { error: "Editor command not found. Make sure the editor is installed and in your PATH." }, status: :unprocessable_entity)
         end
 
         render json: { ok: true, editor: editor_key.presence || Tailscope.configuration.editor_name }
@@ -107,25 +105,15 @@ module Tailscope
 
       private
 
-      def launch_editor(editor_sym, base_command, project_path, file_path, line)
+      def launch_editor(editor_sym, base_command, source_root)
         terminal_app = editor_sym && Configuration::TERMINAL_WRAPPERS[editor_sym]
-        escaped_project = Shellwords.escape(project_path)
+        escaped_project = Shellwords.escape(source_root)
 
         if terminal_app && Configuration.mac?
           launch_mac_terminal(terminal_app, base_command, escaped_project)
         elsif terminal_app && Configuration.linux?
           pid = spawn("x-terminal-emulator", "-e", "bash", "-c", "cd #{escaped_project} && #{base_command}", [:out, :err] => "/dev/null")
           Process.detach(pid)
-        elsif editor_sym && Configuration::PROJECT_EDITORS.include?(editor_sym)
-          # VS Code: open/focus project window, then navigate to file:line
-          pid = spawn("code", project_path, [:out, :err] => "/dev/null")
-          Process.detach(pid)
-          Thread.new do
-            sleep(1.5)
-            pid2 = spawn("code", "-r", "-g", "#{file_path}:#{line}", [:out, :err] => "/dev/null")
-            Process.detach(pid2)
-          rescue StandardError # rubocop:disable Lint/SuppressedException
-          end
         else
           pid = spawn(base_command, [:out, :err] => "/dev/null")
           Process.detach(pid)
