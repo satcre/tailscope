@@ -24,24 +24,26 @@ export default function QueryDrawer({ queryId }) {
         <SqlBlock sql={query.sql_text} />
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div>
-          <div className="text-xs text-gray-500">Duration</div>
-          <DurationBadge ms={query.duration_ms} />
-        </div>
-        <div>
-          <div className="text-xs text-gray-500">Name</div>
-          <div className="text-sm">{query.name || '—'}</div>
-        </div>
-        <div>
-          <div className="text-xs text-gray-500">Request ID</div>
-          <div className="text-sm font-mono truncate">{query.request_id || '—'}</div>
-        </div>
-        <div>
-          <div className="text-xs text-gray-500">Recorded</div>
-          <div className="text-sm">{query.recorded_at}</div>
-        </div>
-      </div>
+      <table className="w-full text-sm border border-gray-200 rounded overflow-hidden">
+        <tbody className="divide-y divide-gray-100">
+          <tr>
+            <td className="px-3 py-2 text-gray-500 font-medium bg-gray-50 w-28">Duration</td>
+            <td className="px-3 py-2"><DurationBadge ms={query.duration_ms} /></td>
+          </tr>
+          <tr>
+            <td className="px-3 py-2 text-gray-500 font-medium bg-gray-50">Name</td>
+            <td className="px-3 py-2">{query.name || '—'}</td>
+          </tr>
+          <tr>
+            <td className="px-3 py-2 text-gray-500 font-medium bg-gray-50">Request ID</td>
+            <td className="px-3 py-2 font-mono break-all">{query.request_id || '—'}</td>
+          </tr>
+          <tr>
+            <td className="px-3 py-2 text-gray-500 font-medium bg-gray-50">Recorded</td>
+            <td className="px-3 py-2">{query.recorded_at}</td>
+          </tr>
+        </tbody>
+      </table>
 
       {query.n_plus_one === 1 && (
         <div className="bg-red-50 border border-red-200 rounded p-3">

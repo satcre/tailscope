@@ -71,7 +71,7 @@ export default function Queries() {
           <tbody className="divide-y divide-gray-100">
             {data?.queries.map((q) => (
               <tr key={q.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setSelected(q.id)}>
-                <td className="px-4 py-2 text-sm font-mono text-gray-700 max-w-md truncate">{truncate(q.sql_text)}</td>
+                <td className="px-4 py-2 text-sm font-mono text-gray-700 whitespace-pre-wrap break-all">{q.sql_text}</td>
                 <td className="px-4 py-2"><DurationBadge ms={q.duration_ms} /></td>
                 <td className="px-4 py-2">
                   {q.n_plus_one === 1 && <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded font-medium">{q.n_plus_one_count}x</span>}
