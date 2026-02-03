@@ -42,23 +42,44 @@ function getLang(filePath) {
   return EXT_MAP[ext] || null
 }
 
+const highlightCache = {}
+
 export function useHighlightedLines(lines, filePath) {
-  return React.useMemo(() => {
-    if (!lines || lines.length === 0) return []
+  const [highlighted, setHighlighted] = React.useState([])
+
+  React.useEffect(() => {
+    if (!lines || lines.length === 0) { setHighlighted([]); return }
+
     const lang = getLang(filePath)
     const code = Array.isArray(lines)
       ? (typeof lines[0] === 'string' ? lines.join('\n') : lines.map((l) => l.content).join('\n'))
       : ''
-    if (!code) return lines.map(() => '')
-    try {
-      const result = lang
-        ? hljs.highlight(code, { language: lang, ignoreIllegals: true })
-        : hljs.highlightAuto(code)
-      return result.value.split('\n')
-    } catch {
-      return lines.map((l) => typeof l === 'string' ? l : l.content)
+    if (!code) { setHighlighted(lines.map(() => '')); return }
+
+    const cacheKey = `${filePath}:${lines.length}`
+    if (highlightCache[cacheKey]) {
+      setHighlighted(highlightCache[cacheKey])
+      return
     }
+
+    // Defer highlighting so plain text renders first
+    const id = requestAnimationFrame(() => {
+      try {
+        const result = lang
+          ? hljs.highlight(code, { language: lang, ignoreIllegals: true })
+          : hljs.highlightAuto(code)
+        const result_lines = result.value.split('\n')
+        highlightCache[cacheKey] = result_lines
+        setHighlighted(result_lines)
+      } catch {
+        setHighlighted(lines.map((l) => typeof l === 'string' ? l : l.content))
+      }
+    })
+
+    return () => cancelAnimationFrame(id)
   }, [lines, filePath])
+
+  return highlighted
 }
 
 export function HighlightedCode({ html }) {
