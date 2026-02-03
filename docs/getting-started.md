@@ -1,6 +1,7 @@
 # Getting Started
 
-> **Early stage.** Tailscope is under active development and has not been battle-tested in production. APIs, configuration, and internal behavior may change.
+ > [!CAUTION]
+> **Early stage.** Tailscope is under active development and has not been battle-tested in production. APIs, configuration, and internal behavior may change. Use in development environments only.
 
 ## Installation
 
