@@ -3,8 +3,6 @@ import { api } from '../api'
 import DurationBadge from '../components/DurationBadge'
 import SqlBlock from '../components/SqlBlock'
 import SourceViewer from '../components/SourceViewer'
-import OpenInEditor from '../components/OpenInEditor'
-import OpenInDebugger from '../components/OpenInDebugger'
 
 export default function QueryDrawer({ queryId }) {
   const [query, setQuery] = React.useState(null)
@@ -54,13 +52,7 @@ export default function QueryDrawer({ queryId }) {
 
       {query.source_file && (
         <div>
-          <div className="text-sm text-gray-500 mb-1 flex items-center gap-1">
-            Source
-            <span className="inline-flex items-center gap-1 ml-auto">
-              <OpenInEditor file={query.source_file} line={query.source_line} />
-              <OpenInDebugger file={query.source_file} line={query.source_line} />
-            </span>
-          </div>
+          <div className="text-sm text-gray-500 mb-1">Source</div>
           <SourceViewer file={query.source_file} line={query.source_line} />
         </div>
       )}

@@ -1,8 +1,6 @@
 import React from 'react'
 import { api } from '../api'
 import SourceViewer from '../components/SourceViewer'
-import OpenInEditor from '../components/OpenInEditor'
-import OpenInDebugger from '../components/OpenInDebugger'
 
 export default function ErrorDrawer({ errorId }) {
   const [error, setError] = React.useState(null)
@@ -46,13 +44,7 @@ export default function ErrorDrawer({ errorId }) {
 
       {error.source_file && (
         <div>
-          <div className="text-sm font-semibold text-gray-700 mb-1 flex items-center gap-1">
-            Source
-            <span className="inline-flex items-center gap-1 ml-auto">
-              <OpenInEditor file={error.source_file} line={error.source_line} />
-              <OpenInDebugger file={error.source_file} line={error.source_line} />
-            </span>
-          </div>
+          <div className="text-sm font-semibold text-gray-700 mb-1">Source</div>
           <SourceViewer file={error.source_file} line={error.source_line} />
         </div>
       )}
