@@ -6,6 +6,7 @@ import Issues from './pages/Issues'
 import Queries from './pages/Queries'
 import Requests from './pages/Requests'
 import Errors from './pages/Errors'
+import Jobs from './pages/Jobs'
 import Debugger from './pages/Debugger'
 
 
@@ -18,6 +19,7 @@ export default function App() {
           <Route path="/" element={<Issues />} />
           <Route path="/queries" element={<Queries />} />
           <Route path="/requests" element={<Requests />} />
+          <Route path="/jobs" element={<Jobs />} />
           <Route path="/errors" element={<Errors />} />
           <Route path="/debugger" element={<Debugger />} />
         </Routes>

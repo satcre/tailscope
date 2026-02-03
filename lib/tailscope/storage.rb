@@ -50,6 +50,16 @@ module Tailscope
         enqueue([:service, attrs])
       end
 
+      def record_job(attrs)
+        enqueue([:job, attrs])
+      end
+
+      def queries_count(n_plus_one_only: false)
+        sql = "SELECT COUNT(*) as count FROM tailscope_queries"
+        sql += " WHERE n_plus_one = 1" if n_plus_one_only
+        Tailscope::Database.connection.execute(sql).first["count"]
+      end
+
       def queries(limit: 50, offset: 0, n_plus_one_only: false)
         sql = "SELECT * FROM tailscope_queries"
         sql += " WHERE n_plus_one = 1" if n_plus_one_only
@@ -68,6 +78,12 @@ module Tailscope
           "SELECT * FROM tailscope_requests ORDER BY id DESC LIMIT ? OFFSET ?",
           [limit, offset]
         )
+      end
+
+      def errors_count
+        Tailscope::Database.connection.execute(
+          "SELECT COUNT(*) as count FROM tailscope_errors"
+        ).first["count"]
       end
 
       def errors(limit: 50, offset: 0)
@@ -149,6 +165,50 @@ module Tailscope
         Tailscope::Database.connection.execute("DELETE FROM tailscope_errors")
       end
 
+      def jobs_count
+        Tailscope::Database.connection.execute(
+          "SELECT COUNT(*) as count FROM tailscope_jobs"
+        ).first["count"]
+      end
+
+      def jobs(limit: 50, offset: 0)
+        Tailscope::Database.connection.execute(
+          "SELECT * FROM tailscope_jobs ORDER BY id DESC LIMIT ? OFFSET ?",
+          [limit, offset]
+        )
+      end
+
+      def find_job(id)
+        results = Tailscope::Database.connection.execute(
+          "SELECT * FROM tailscope_jobs WHERE id = ?", [id]
+        )
+        results.first
+      end
+
+      def queries_for_job(job_id)
+        return [] unless job_id
+        tracking_id = "job_#{job_id}"
+
+        Tailscope::Database.connection.execute(
+          "SELECT * FROM tailscope_queries WHERE request_id = ? ORDER BY recorded_at ASC",
+          [tracking_id]
+        )
+      end
+
+      def services_for_job(job_id)
+        return [] unless job_id
+        tracking_id = "job_#{job_id}"
+
+        Tailscope::Database.connection.execute(
+          "SELECT * FROM tailscope_services WHERE request_id = ? ORDER BY recorded_at ASC",
+          [tracking_id]
+        )
+      end
+
+      def delete_all_jobs
+        Tailscope::Database.connection.execute("DELETE FROM tailscope_jobs")
+      end
+
       def purge!(days: nil)
         days ||= Tailscope.configuration.storage_retention_days
         cutoff = (Time.now - (days * 86400)).strftime("%Y-%m-%d %H:%M:%S")
@@ -157,6 +217,7 @@ module Tailscope
         db.execute("DELETE FROM tailscope_requests WHERE recorded_at < ?", [cutoff])
         db.execute("DELETE FROM tailscope_errors WHERE recorded_at < ?", [cutoff])
         db.execute("DELETE FROM tailscope_services WHERE recorded_at < ?", [cutoff])
+        db.execute("DELETE FROM tailscope_jobs WHERE recorded_at < ?", [cutoff])
       end
 
       # --- Ignored Issues ---
@@ -250,6 +311,13 @@ module Tailscope
              attrs[:detail].is_a?(Hash) ? JSON.dump(attrs[:detail]) : attrs[:detail],
              attrs[:source_file], attrs[:source_line], attrs[:source_method],
              attrs[:request_id], attrs[:started_at_ms]]
+          )
+        when :job
+          db.execute(
+            "INSERT INTO tailscope_jobs (job_class, job_id, queue_name, status, duration_ms, error_class, error_message, source_file, source_line, request_id, recorded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+            [attrs[:job_class], attrs[:job_id], attrs[:queue_name], attrs[:status],
+             attrs[:duration_ms], attrs[:error_class], attrs[:error_message],
+             attrs[:source_file], attrs[:source_line], attrs[:request_id]]
           )
         end
       end

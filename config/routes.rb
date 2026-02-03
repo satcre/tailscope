@@ -12,6 +12,8 @@ Tailscope::Engine.routes.draw do
     delete "requests", to: "requests#destroy_all"
     resources :errors, only: [:index, :show]
     delete "errors", to: "errors#destroy_all"
+    resources :jobs, only: [:index, :show]
+    delete "jobs", to: "jobs#destroy_all"
 
     get "source", to: "source#show", as: :source
     post "editor/open", to: "editor#open", as: :editor_open

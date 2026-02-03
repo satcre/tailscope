@@ -5,9 +5,11 @@ module Tailscope
     class ErrorsController < ApiController
       def index
         errors = Storage.errors(limit: per_page, offset: offset)
+        total = Storage.errors_count
 
         render json: {
           errors: errors,
+          total: total,
           page: page_param,
           per_page: per_page,
           has_more: errors.size == per_page,

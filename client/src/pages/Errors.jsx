@@ -32,7 +32,12 @@ export default function Errors() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Errors</h1>
+        <div className="flex items-baseline gap-3">
+          <h1 className="text-2xl font-bold">Errors</h1>
+          {data?.total != null && (
+            <span className="text-sm text-gray-500">{data.total.toLocaleString()} total</span>
+          )}
+        </div>
         <button
           onClick={handleDeleteAll}
           className="px-3 py-1 text-sm rounded bg-red-600 text-white hover:bg-red-700"

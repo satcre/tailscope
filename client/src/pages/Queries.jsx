@@ -36,7 +36,12 @@ export default function Queries() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">{nPlusOneOnly ? 'N+1 Queries' : 'Slow Queries'}</h1>
+        <div className="flex items-baseline gap-3">
+          <h1 className="text-2xl font-bold">{nPlusOneOnly ? 'N+1 Queries' : 'Queries'}</h1>
+          {data?.total != null && (
+            <span className="text-sm text-gray-500">{data.total.toLocaleString()} total</span>
+          )}
+        </div>
         <div className="flex gap-2">
           <button
             onClick={() => setSearchParams({ page: '1' })}

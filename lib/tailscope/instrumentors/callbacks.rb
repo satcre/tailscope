@@ -63,8 +63,7 @@ module Tailscope
           duration_ms = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - start) * 1000.0
 
           if duration_ms >= 0.01
-            filter_name = filter.is_a?(Symbol) ? filter : filter.class.name
-            source_file, source_line = resolve_callback_source(env&.target, filter)
+            filter_name = respond_to?(:filter, true) ? (filter.is_a?(Symbol) ? filter : filter.class.name) : "after"
             started_at_ms = req_start ? (start - req_start) * 1000.0 : nil
 
             Tailscope::Storage.record_service(
@@ -73,24 +72,13 @@ module Tailscope
               duration_ms: duration_ms.round(2),
               started_at_ms: started_at_ms&.round(2),
               detail: { kind: "after", filter: filter_name.to_s },
-              source_file: source_file,
-              source_line: source_line,
+              source_file: nil,
+              source_line: nil,
               source_method: filter_name.to_s,
               request_id: Thread.current[:tailscope_request_id],
             )
           end
         end
-      end
-
-      private
-
-      def resolve_callback_source(target, filter_sym)
-        return [nil, nil] unless target && filter_sym.is_a?(Symbol)
-
-        method = target.method(filter_sym)
-        method.source_location
-      rescue NameError, TypeError
-        [nil, nil]
       end
     end
 

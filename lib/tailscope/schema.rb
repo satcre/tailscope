@@ -78,6 +78,22 @@ module Tailscope
           recorded_at TEXT NOT NULL DEFAULT (datetime('now'))
         )
       SQL
+      tailscope_jobs: <<~SQL,
+        CREATE TABLE IF NOT EXISTS tailscope_jobs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          job_class TEXT NOT NULL,
+          job_id TEXT,
+          queue_name TEXT,
+          status TEXT NOT NULL,
+          duration_ms REAL,
+          error_class TEXT,
+          error_message TEXT,
+          source_file TEXT,
+          source_line INTEGER,
+          request_id TEXT,
+          recorded_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      SQL
       tailscope_ignored_issues: <<~SQL
         CREATE TABLE IF NOT EXISTS tailscope_ignored_issues (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -100,6 +116,8 @@ module Tailscope
       "CREATE INDEX IF NOT EXISTS idx_services_recorded_at ON tailscope_services(recorded_at)",
       "CREATE INDEX IF NOT EXISTS idx_services_request_id ON tailscope_services(request_id)",
       "CREATE INDEX IF NOT EXISTS idx_services_category ON tailscope_services(category)",
+      "CREATE INDEX IF NOT EXISTS idx_jobs_recorded_at ON tailscope_jobs(recorded_at)",
+      "CREATE INDEX IF NOT EXISTS idx_jobs_job_class ON tailscope_jobs(job_class)",
       "CREATE INDEX IF NOT EXISTS idx_ignored_fingerprint ON tailscope_ignored_issues(fingerprint)",
     ].freeze
 

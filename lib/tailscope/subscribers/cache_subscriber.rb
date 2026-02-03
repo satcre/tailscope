@@ -3,7 +3,7 @@
 module Tailscope
   module Subscribers
     class CacheSubscriber
-      SLOW_THRESHOLD_MS = 10
+      SLOW_THRESHOLD_MS = 0
 
       EVENTS = %w[
         cache_read.active_support
