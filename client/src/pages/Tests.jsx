@@ -570,9 +570,9 @@ function ResultsDrawer({ runStatus, isRunning, onCancel, onViewSource }) {
       {tab === 'results' && (
         <div className="flex-1 overflow-y-auto space-y-3">
           {runStatus.status === 'error' && runStatus.error_output && (
-            <div className="p-2 bg-red-50 border border-red-200 rounded text-xs text-red-800 font-mono whitespace-pre-wrap">
-              {runStatus.error_output}
-            </div>
+            <pre className="p-3 bg-gray-900 text-gray-100 rounded text-xs font-mono whitespace-pre-wrap overflow-x-auto">
+              <AnsiText text={runStatus.error_output} />
+            </pre>
           )}
           {fileKeys.map((filePath) => (
             <FileResultGroup key={filePath} filePath={filePath} examples={byFile[filePath]} onViewSource={onViewSource} />
@@ -824,6 +824,10 @@ export default function Tests() {
           )}
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setExpanded({})}
+            className="px-3 py-1 text-sm rounded bg-gray-200 text-gray-700 hover:bg-gray-300"
+          >Collapse All</button>
           {isRunning && (
             <span className="flex items-center gap-2 text-sm text-blue-600">
               <svg className="w-4 h-4 animate-spin" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
