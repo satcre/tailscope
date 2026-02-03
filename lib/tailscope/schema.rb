@@ -94,13 +94,24 @@ module Tailscope
           recorded_at TEXT NOT NULL DEFAULT (datetime('now'))
         )
       SQL
-      tailscope_ignored_issues: <<~SQL
+      tailscope_ignored_issues: <<~SQL,
         CREATE TABLE IF NOT EXISTS tailscope_ignored_issues (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           fingerprint TEXT NOT NULL UNIQUE,
           issue_title TEXT,
           issue_type TEXT,
           created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      SQL
+      tailscope_coverage: <<~SQL
+        CREATE TABLE IF NOT EXISTS tailscope_coverage (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          run_id TEXT NOT NULL,
+          overall_percentage REAL,
+          total_lines INTEGER,
+          covered_lines INTEGER,
+          files_json TEXT,
+          recorded_at TEXT NOT NULL DEFAULT (datetime('now'))
         )
       SQL
     }.freeze

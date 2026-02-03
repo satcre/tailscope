@@ -111,66 +111,25 @@ module Tailscope
       def coverage
         return { available: false } unless defined?(Rails)
 
-        resultset = Rails.root.join("coverage", ".resultset.json")
-        return { available: false } unless File.exist?(resultset)
+        # Read stored coverage from SQLite (captured immediately after test run)
+        row = Tailscope::Database.connection.execute(
+          "SELECT overall_percentage, total_lines, covered_lines, files_json FROM tailscope_coverage ORDER BY id DESC LIMIT 1"
+        ).first
 
-        data = JSON.parse(File.read(resultset))
-        raw_coverage = nil
-
-        # SimpleCov may store multiple command entries (e.g. "RSpec", "Unit Tests").
-        # Use the one with the most recent timestamp.
-        latest_timestamp = 0
-        data.each_value do |entry|
-          next unless entry.is_a?(Hash) && entry["coverage"]
-          ts = entry["timestamp"].to_i
-          if ts >= latest_timestamp
-            latest_timestamp = ts
-            raw_coverage = entry["coverage"]
-          end
-        end
-
-        return { available: false } unless raw_coverage
-
-        source_root = Rails.root.to_s + "/"
-        total_covered = 0
-        total_relevant = 0
-        files = []
-
-        raw_coverage.each do |file_path, file_data|
-          # Only include app/ and lib/ files
-          relative = file_path.sub(source_root, "")
-          next unless relative.start_with?("app/") || relative.start_with?("lib/")
-
-          lines = file_data.is_a?(Hash) ? file_data["lines"] : file_data
-          next unless lines.is_a?(Array)
-
-          relevant = lines.count { |v| !v.nil? }
-          covered = lines.count { |v| v.is_a?(Integer) && v > 0 }
-          missed = relevant - covered
-          percentage = relevant > 0 ? (covered.to_f / relevant * 100).round(1) : 100.0
-
-          total_covered += covered
-          total_relevant += relevant
-
-          files << {
-            path: relative,
-            covered: covered,
-            missed: missed,
-            total: relevant,
-            percentage: percentage,
-            lines: lines,
+        if row
+          files = JSON.parse(row["files_json"] || "[]")
+          {
+            available: true,
+            summary: {
+              total_lines: row["total_lines"],
+              covered_lines: row["covered_lines"],
+              percentage: row["overall_percentage"],
+            },
+            files: files,
           }
+        else
+          { available: false }
         end
-
-        files.sort_by! { |f| f[:percentage] }
-
-        overall = total_relevant > 0 ? (total_covered.to_f / total_relevant * 100).round(1) : 0.0
-
-        {
-          available: true,
-          summary: { total_lines: total_relevant, covered_lines: total_covered, percentage: overall },
-          files: files,
-        }
       rescue => e
         { available: false, error: e.message }
       end
@@ -299,6 +258,10 @@ module Tailscope
           @current_run[:status] = "error"
           @current_run[:error_output] = console_output[0..5000]
         end
+
+        # Capture coverage data immediately after the child process exits,
+        # while .resultset.json is still fresh from SimpleCov's at_exit hook.
+        store_coverage(console_output)
       end
 
       def parse_results(output)
@@ -346,6 +309,94 @@ module Tailscope
       rescue JSON::ParserError => e
         @current_run[:status] = "error"
         @current_run[:error_output] = "Failed to parse rspec output: #{e.message}\n#{output[0..500]}"
+      end
+
+      def store_coverage(console_output)
+        return unless defined?(Rails)
+
+        resultset = Rails.root.join("coverage", ".resultset.json")
+        return unless File.exist?(resultset)
+
+        data = JSON.parse(File.read(resultset))
+        raw_coverage = nil
+
+        # SimpleCov may store multiple command entries. Use the most recent.
+        latest_timestamp = 0
+        data.each_value do |entry|
+          next unless entry.is_a?(Hash) && entry["coverage"]
+          ts = entry["timestamp"].to_i
+          if ts >= latest_timestamp
+            latest_timestamp = ts
+            raw_coverage = entry["coverage"]
+          end
+        end
+
+        return unless raw_coverage
+
+        source_root = Rails.root.to_s + "/"
+        total_covered = 0
+        total_relevant = 0
+        files = []
+
+        raw_coverage.each do |file_path, file_data|
+          relative = file_path.sub(source_root, "")
+          next unless relative.start_with?("app/") || relative.start_with?("lib/")
+
+          lines = file_data.is_a?(Hash) ? file_data["lines"] : file_data
+          next unless lines.is_a?(Array)
+
+          relevant = lines.count { |v| !v.nil? }
+          covered = lines.count { |v| v.is_a?(Integer) && v > 0 }
+          missed = relevant - covered
+          percentage = relevant > 0 ? (covered.to_f / relevant * 100).round(1) : 100.0
+
+          total_covered += covered
+          total_relevant += relevant
+
+          files << {
+            path: relative,
+            covered: covered,
+            missed: missed,
+            total: relevant,
+            percentage: percentage,
+            lines: lines,
+          }
+        end
+
+        files.sort_by! { |f| f[:percentage] }
+        overall = total_relevant > 0 ? (total_covered.to_f / total_relevant * 100).round(1) : 0.0
+
+        # If resultset shows near-zero coverage but console output has a higher
+        # SimpleCov percentage, use the console value instead — the resultset
+        # can be unreliable when rspec is spawned from a running Rails process.
+        console_pct = parse_simplecov_line(console_output)
+        if console_pct && console_pct > overall && console_pct > 1.0
+          overall = console_pct
+          # We can't reconstruct per-file data from the console line,
+          # so clear files to avoid showing misleading per-file breakdowns.
+          files = []
+          total_relevant = 0
+          total_covered = 0
+        end
+
+        db = Tailscope::Database.connection
+        db.execute(
+          "INSERT INTO tailscope_coverage (run_id, overall_percentage, total_lines, covered_lines, files_json) VALUES (?, ?, ?, ?, ?)",
+          [@current_run[:id], overall, total_relevant, total_covered, JSON.generate(files)]
+        )
+
+        # Keep only the latest 10 coverage records
+        db.execute("DELETE FROM tailscope_coverage WHERE id NOT IN (SELECT id FROM tailscope_coverage ORDER BY id DESC LIMIT 10)")
+      rescue => e
+        # Coverage storage is best-effort; don't break test runs
+        Rails.logger.warn("[Tailscope] Failed to store coverage: #{e.message}") if defined?(Rails)
+      end
+
+      def parse_simplecov_line(output)
+        return nil unless output
+        # SimpleCov prints: "Coverage report generated... 870 / 938 LOC (92.75%) covered."
+        match = output.match(/\((\d+\.?\d*)%\)\s+covered/)
+        match ? match[1].to_f : nil
       end
 
       def extract_json(output)

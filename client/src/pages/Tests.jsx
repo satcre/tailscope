@@ -727,10 +727,8 @@ export default function Tests() {
   // When a run finishes, refresh coverage data and fetch examples
   React.useEffect(() => {
     if (!runStatus?.examples || runStatus.status === 'running') return
-    // Refresh coverage data after test run completes (delay to allow SimpleCov's at_exit to write)
-    setTimeout(() => {
-      api.get('/tests/coverage').then(setCoverageData).catch(() => {})
-    }, 3000)
+    // Refresh coverage data (stored in SQLite immediately after test run)
+    api.get('/tests/coverage').then(setCoverageData).catch(() => {})
     const files = new Set()
     runStatus.examples.forEach((ex) => {
       const fp = ex.file_path?.replace('./', '')
