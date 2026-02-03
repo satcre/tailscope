@@ -8,6 +8,11 @@ module Tailscope
         line = params[:line].to_i
         source_root = Tailscope.configuration.source_root
 
+        # Resolve relative paths against source root
+        unless file.start_with?("/")
+          file = File.join(source_root, file)
+        end
+
         unless file.start_with?(source_root)
           return render(json: { error: "Forbidden" }, status: :forbidden)
         end

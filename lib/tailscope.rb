@@ -22,6 +22,7 @@ require "tailscope/instrumentors/active_job"
 require "tailscope/debugger"
 require "tailscope/issue_builder"
 require "tailscope/code_analyzer"
+require "tailscope/test_runner"
 
 require "tailscope/engine" if defined?(Rails)
 require "tailscope/railtie" if defined?(Rails::Railtie)

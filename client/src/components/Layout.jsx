@@ -119,6 +119,7 @@ export default function Layout({ children }) {
     { to: '/requests', label: 'Requests', match: (p) => p.startsWith('/requests') },
     { to: '/jobs', label: 'Jobs', match: (p) => p.startsWith('/jobs') },
     { to: '/errors', label: 'Errors', match: (p) => p.startsWith('/errors') },
+    { to: '/tests', label: 'Tests', match: (p) => p.startsWith('/tests') },
     { to: '/debugger', label: 'Debugger', match: (p) => p.startsWith('/debugger'), accent: true },
   ]
 

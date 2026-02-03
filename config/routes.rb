@@ -15,6 +15,12 @@ Tailscope::Engine.routes.draw do
     resources :jobs, only: [:index, :show]
     delete "jobs", to: "jobs#destroy_all"
 
+    get "tests/specs", to: "tests#specs", as: :tests_specs
+    get "tests/examples", to: "tests#examples", as: :tests_examples
+    post "tests/run", to: "tests#run", as: :tests_run
+    get "tests/status", to: "tests#status", as: :tests_status
+    post "tests/cancel", to: "tests#cancel", as: :tests_cancel
+
     get "source", to: "source#show", as: :source
     post "editor/open", to: "editor#open", as: :editor_open
     post "editor/check", to: "editor#check", as: :editor_check
