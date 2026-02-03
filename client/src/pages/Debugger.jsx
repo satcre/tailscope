@@ -28,22 +28,35 @@ function FileTree({ onSelectFile, currentFile, breakpoints }) {
     return data
   }, [rootPath])
 
-  React.useEffect(() => { loadDir('') }, [loadDir])
+  // Load root directory and auto-expand key directories on first load
+  React.useEffect(() => {
+    loadDir('').then((root) => {
+      if (!root?.is_directory) return
+      const stored = loadStoredFolders()
+      const hasStored = Object.values(stored).some(Boolean)
+      if (hasStored) {
+        // Restore previously expanded folders
+        Object.entries(stored).forEach(([path, isOpen]) => {
+          if (isOpen) loadDir(path).catch(() => {})
+        })
+      } else {
+        // Auto-expand app/ and lib/ on first visit
+        const autoExpand = ['app', 'lib']
+        autoExpand.forEach((dir) => {
+          if (root.directories.includes(dir)) {
+            const full = `${root.path}/${dir}`
+            setExpanded((prev) => ({ ...prev, [full]: true }))
+            loadDir(full).catch(() => {})
+          }
+        })
+      }
+    }).catch(() => {})
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Persist folder expanded state
   React.useEffect(() => {
     localStorage.setItem(LS_DEBUGGER_FOLDERS_KEY, JSON.stringify(expanded))
   }, [expanded])
-
-  // On mount, load data for any previously expanded folders
-  React.useEffect(() => {
-    const stored = loadStoredFolders()
-    Object.entries(stored).forEach(([path, isOpen]) => {
-      if (isOpen && !tree[path]) {
-        loadDir(path).catch(() => {})
-      }
-    })
-  }, [rootPath]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggle = async (path) => {
     if (expanded[path]) {
@@ -343,7 +356,7 @@ export default function Debugger() {
   }, [activeTab])
 
   const loadData = React.useCallback(() => {
-    api.get('/debugger').then(setData).catch(() => setData(null)).finally(() => setLoading(false))
+    return api.get('/debugger').then(setData).catch(() => setData(null)).finally(() => setLoading(false))
   }, [])
 
   React.useEffect(() => {
@@ -357,8 +370,8 @@ export default function Debugger() {
   }, [loadData])
 
   const loadFileBpLines = React.useCallback((filePath) => {
-    if (!filePath) return
-    api.get(`/debugger/browse?path=${encodeURIComponent(filePath)}`)
+    if (!filePath) return Promise.resolve()
+    return api.get(`/debugger/browse?path=${encodeURIComponent(filePath)}`)
       .then((d) => { if (!d.is_directory) setFileBpLines(d.breakpoint_lines || []) })
       .catch(() => {})
   }, [])
@@ -424,15 +437,15 @@ export default function Debugger() {
     } else {
       await api.post('/debugger/breakpoints', { file, line, condition })
     }
-    loadData()
-    loadFileBpLines(file)
+    await loadData()
+    await loadFileBpLines(file)
     notifyBreakpointChange()
   }
 
   const removeBreakpoint = async (id) => {
     await api.del(`/debugger/breakpoints/${id}`)
-    loadData()
-    if (activeTab) loadFileBpLines(activeTab)
+    await loadData()
+    if (activeTab) await loadFileBpLines(activeTab)
     notifyBreakpointChange()
   }
 
