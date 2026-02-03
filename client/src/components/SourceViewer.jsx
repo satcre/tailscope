@@ -4,6 +4,8 @@ import { useHighlightedLines, HighlightedCode } from './HighlightedLine'
 import OpenInEditor from './OpenInEditor'
 import OpenInDebugger from './OpenInDebugger'
 
+const sourceCache = {}
+
 function coverageClass(coverage, lineNumber) {
   if (!coverage) return ''
   const val = coverage[lineNumber - 1]
@@ -17,10 +19,16 @@ export default function SourceViewer({ file, line, full, coverage }) {
 
   React.useEffect(() => {
     if (!file || !line) return
-    setLoading(true)
     const fullParam = full ? '&full=1' : ''
+    const cacheKey = `${file}:${line}:${full ? 1 : 0}`
+    if (sourceCache[cacheKey]) {
+      setSource(sourceCache[cacheKey])
+      setLoading(false)
+      return
+    }
+    setLoading(true)
     api.get(`/source?file=${encodeURIComponent(file)}&line=${line}${fullParam}`)
-      .then(setSource)
+      .then((data) => { sourceCache[cacheKey] = data; setSource(data) })
       .catch(() => setSource(null))
       .finally(() => setLoading(false))
   }, [file, line, full])
