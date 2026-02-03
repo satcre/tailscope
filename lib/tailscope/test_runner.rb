@@ -117,11 +117,15 @@ module Tailscope
         data = JSON.parse(File.read(resultset))
         raw_coverage = nil
 
-        # SimpleCov stores under the command name key (e.g. "RSpec", "Unit Tests")
+        # SimpleCov may store multiple command entries (e.g. "RSpec", "Unit Tests").
+        # Use the one with the most recent timestamp.
+        latest_timestamp = 0
         data.each_value do |entry|
-          if entry.is_a?(Hash) && entry["coverage"]
+          next unless entry.is_a?(Hash) && entry["coverage"]
+          ts = entry["timestamp"].to_i
+          if ts >= latest_timestamp
+            latest_timestamp = ts
             raw_coverage = entry["coverage"]
-            break
           end
         end
 
