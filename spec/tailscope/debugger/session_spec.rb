@@ -188,4 +188,37 @@ RSpec.describe Tailscope::Debugger::SessionStore do
     s2.continue!
     expect(described_class.active_sessions).to eq([s1])
   end
+
+  it "returns all sessions sorted by creation time" do
+    s1 = Tailscope::Debugger::Session.new(binding_obj: binding, file: __FILE__, line: 1, method_name: "a")
+    s2 = Tailscope::Debugger::Session.new(binding_obj: binding, file: __FILE__, line: 2, method_name: "b")
+    described_class.add(s1)
+    described_class.add(s2)
+    all = described_class.all_sessions
+    expect(all.size).to eq(2)
+    expect(all.first.created_at).to be >= all.last.created_at
+  end
+
+  describe ".cleanup_old!" do
+    it "removes old non-paused sessions" do
+      s1 = Tailscope::Debugger::Session.new(binding_obj: binding, file: __FILE__, line: 1, method_name: "a")
+      s2 = Tailscope::Debugger::Session.new(binding_obj: binding, file: __FILE__, line: 2, method_name: "b")
+      described_class.add(s1)
+      described_class.add(s2)
+      s2.continue!
+      # Backdate s2's creation time
+      allow(s2).to receive(:created_at).and_return(Time.now - 600)
+      described_class.cleanup_old!(max_age: 300)
+      expect(described_class.find(s1.id)).to eq(s1)
+      expect(described_class.find(s2.id)).to be_nil
+    end
+
+    it "keeps paused sessions even if old" do
+      s1 = Tailscope::Debugger::Session.new(binding_obj: binding, file: __FILE__, line: 1, method_name: "a")
+      described_class.add(s1)
+      allow(s1).to receive(:created_at).and_return(Time.now - 600)
+      described_class.cleanup_old!(max_age: 300)
+      expect(described_class.find(s1.id)).to eq(s1)
+    end
+  end
 end

@@ -1,0 +1,375 @@
+Started GET "/tailscope/api/debugger" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::DebuggerController#index as HTML
+Completed 200 OK in 11ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/debugger/breakpoints" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::DebuggerController#create_breakpoint as HTML
+  Parameters: {"file" => "/Users/silvia/code/af/os/rb/tailscope/spec/dummy/config/routes.rb", "line" => "3"}
+Completed 200 OK in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/debugger/breakpoints" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::DebuggerController#create_breakpoint as HTML
+  Parameters: {"file" => "/etc/passwd", "line" => "1"}
+Completed 403 Forbidden in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started DELETE "/tailscope/api/debugger/breakpoints/2" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::DebuggerController#remove_breakpoint as HTML
+  Parameters: {"id" => "2"}
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/debugger/sessions/nonexistent" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::DebuggerController#show_session as HTML
+  Parameters: {"id" => "nonexistent"}
+Completed 404 Not Found in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/debugger/poll" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::DebuggerController#poll as HTML
+Completed 200 OK in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/debugger/browse" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::DebuggerController#browse as HTML
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/debugger/browse?path=%2FUsers%2Fsilvia%2Fcode%2Faf%2Fos%2Frb%2Ftailscope%2Fspec%2Fdummy%2Fconfig%2Froutes.rb" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::DebuggerController#browse as HTML
+  Parameters: {"path" => "/Users/silvia/code/af/os/rb/tailscope/spec/dummy/config/routes.rb"}
+Completed 200 OK in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/debugger/browse?path=%2Fetc" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::DebuggerController#browse as HTML
+  Parameters: {"path" => "/etc"}
+Completed 403 Forbidden in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/editor/open" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::EditorController#open as HTML
+  Parameters: {"file" => "/etc/passwd", "line" => "1"}
+Completed 403 Forbidden in 1ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.3ms)
+Started POST "/tailscope/api/editor/open" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::EditorController#open as HTML
+  Parameters: {"file" => "/Users/silvia/code/af/os/rb/tailscope/spec/dummy/nope.rb", "line" => "1"}
+Completed 404 Not Found in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/editor/open" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::EditorController#open as HTML
+  Parameters: {"file" => "/Users/silvia/code/af/os/rb/tailscope/spec/dummy/config/routes.rb", "line" => "1"}
+Completed 422 Unprocessable Content in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/editor/open" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::EditorController#open as HTML
+  Parameters: {"file" => "/Users/silvia/code/af/os/rb/tailscope/spec/dummy/config/routes.rb", "line" => "5"}
+Completed 200 OK in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/editor/check" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::EditorController#check as HTML
+  Parameters: {"editor" => "unknown"}
+Completed 422 Unprocessable Content in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/editor/check" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::EditorController#check as HTML
+  Parameters: {"editor" => "vscode"}
+Completed 200 OK in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/errors" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::ErrorsController#index as HTML
+Completed 200 OK in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/errors/2" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::ErrorsController#show as HTML
+  Parameters: {"id" => "2"}
+Completed 200 OK in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/errors/99999" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::ErrorsController#show as HTML
+  Parameters: {"id" => "99999"}
+Completed 404 Not Found in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/issues" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::IssuesController#index as HTML
+Completed 200 OK in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/issues?severity=critical" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::IssuesController#index as HTML
+  Parameters: {"severity" => "critical"}
+Completed 200 OK in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/issues?tab=ignored" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::IssuesController#index as HTML
+  Parameters: {"tab" => "ignored"}
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.4ms)
+Started POST "/tailscope/api/issues/abc123/ignore" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::IssuesController#ignore as HTML
+  Parameters: {"fingerprint" => "abc123"}
+Completed 200 OK in 2ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.7ms)
+Started POST "/tailscope/api/issues/abc123/unignore" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::IssuesController#unignore as HTML
+  Parameters: {"fingerprint" => "abc123"}
+Completed 200 OK in 1ms (Views: 0.5ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.9ms)
+Started GET "/tailscope/api/queries" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::QueriesController#index as HTML
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.3ms)
+Started GET "/tailscope/api/queries?n_plus_one_only=true" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::QueriesController#index as HTML
+  Parameters: {"n_plus_one_only" => "true"}
+Completed 200 OK in 2ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 1.4ms)
+Started GET "/tailscope/api/queries/5" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::QueriesController#show as HTML
+  Parameters: {"id" => "5"}
+Completed 200 OK in 1ms (Views: 0.2ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.2ms)
+Started GET "/tailscope/api/queries/99999" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::QueriesController#show as HTML
+  Parameters: {"id" => "99999"}
+Completed 404 Not Found in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/requests" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::RequestsController#index as HTML
+Completed 200 OK in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/requests/2" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::RequestsController#show as HTML
+  Parameters: {"id" => "2"}
+Completed 200 OK in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/requests/99999" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::RequestsController#show as HTML
+  Parameters: {"id" => "99999"}
+Completed 404 Not Found in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/source?file=%2FUsers%2Fsilvia%2Fcode%2Faf%2Fos%2Frb%2Ftailscope%2Fspec%2Fdummy%2Fconfig%2Froutes.rb&line=3" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::SourceController#show as HTML
+  Parameters: {"file" => "/Users/silvia/code/af/os/rb/tailscope/spec/dummy/config/routes.rb", "line" => "3"}
+Completed 200 OK in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/source?file=%2Fetc%2Fpasswd&line=1" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::SourceController#show as HTML
+  Parameters: {"file" => "/etc/passwd", "line" => "1"}
+Completed 403 Forbidden in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/source?file=%2FUsers%2Fsilvia%2Fcode%2Faf%2Fos%2Frb%2Ftailscope%2Fspec%2Fdummy%2Fnonexistent.rb&line=1" for 127.0.0.1 at 2026-02-03 12:43:28 +0530
+Processing by Tailscope::Api::SourceController#show as HTML
+  Parameters: {"file" => "/Users/silvia/code/af/os/rb/tailscope/spec/dummy/nonexistent.rb", "line" => "1"}
+Completed 404 Not Found in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/debugger" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::DebuggerController#index as HTML
+Completed 200 OK in 4ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/debugger/breakpoints" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::DebuggerController#create_breakpoint as HTML
+  Parameters: {"file" => "/Users/silvia/code/af/os/rb/tailscope/spec/dummy/config/routes.rb", "line" => "3"}
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/debugger/breakpoints" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::DebuggerController#create_breakpoint as HTML
+  Parameters: {"file" => "/etc/passwd", "line" => "1"}
+Completed 403 Forbidden in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started DELETE "/tailscope/api/debugger/breakpoints/2" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::DebuggerController#remove_breakpoint as HTML
+  Parameters: {"id" => "2"}
+Completed 200 OK in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/debugger/sessions/nonexistent" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::DebuggerController#show_session as HTML
+  Parameters: {"id" => "nonexistent"}
+Completed 404 Not Found in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/debugger/poll" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::DebuggerController#poll as HTML
+Completed 200 OK in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/debugger/browse" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::DebuggerController#browse as HTML
+Completed 200 OK in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/debugger/browse?path=%2FUsers%2Fsilvia%2Fcode%2Faf%2Fos%2Frb%2Ftailscope%2Fspec%2Fdummy%2Fconfig%2Froutes.rb" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::DebuggerController#browse as HTML
+  Parameters: {"path" => "/Users/silvia/code/af/os/rb/tailscope/spec/dummy/config/routes.rb"}
+Completed 200 OK in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/debugger/browse?path=%2Fetc" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::DebuggerController#browse as HTML
+  Parameters: {"path" => "/etc"}
+Completed 403 Forbidden in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/editor/open" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::EditorController#open as HTML
+  Parameters: {"file" => "/etc/passwd", "line" => "1"}
+Completed 403 Forbidden in 1ms (Views: 0.2ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/editor/open" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::EditorController#open as HTML
+  Parameters: {"file" => "/Users/silvia/code/af/os/rb/tailscope/spec/dummy/nope.rb", "line" => "1"}
+Completed 404 Not Found in 1ms (Views: 0.7ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.6ms)
+Started POST "/tailscope/api/editor/open" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::EditorController#open as HTML
+  Parameters: {"file" => "/Users/silvia/code/af/os/rb/tailscope/spec/dummy/config/routes.rb", "line" => "1"}
+Completed 422 Unprocessable Content in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/editor/open" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::EditorController#open as HTML
+  Parameters: {"file" => "/Users/silvia/code/af/os/rb/tailscope/spec/dummy/config/routes.rb", "line" => "5"}
+Completed 200 OK in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/editor/check" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::EditorController#check as HTML
+  Parameters: {"editor" => "unknown"}
+Completed 422 Unprocessable Content in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/editor/check" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::EditorController#check as HTML
+  Parameters: {"editor" => "vscode"}
+Completed 200 OK in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/errors" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::ErrorsController#index as HTML
+Completed 200 OK in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/errors/2" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::ErrorsController#show as HTML
+  Parameters: {"id" => "2"}
+Completed 200 OK in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/errors/99999" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::ErrorsController#show as HTML
+  Parameters: {"id" => "99999"}
+Completed 404 Not Found in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/issues" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::IssuesController#index as HTML
+Completed 200 OK in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/issues?severity=critical" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::IssuesController#index as HTML
+  Parameters: {"severity" => "critical"}
+Completed 200 OK in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.1ms)
+Started GET "/tailscope/api/issues?tab=ignored" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::IssuesController#index as HTML
+  Parameters: {"tab" => "ignored"}
+Completed 200 OK in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/issues/abc123/ignore" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::IssuesController#ignore as HTML
+  Parameters: {"fingerprint" => "abc123"}
+Completed 200 OK in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/issues/abc123/unignore" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::IssuesController#unignore as HTML
+  Parameters: {"fingerprint" => "abc123"}
+Completed 200 OK in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.1ms)
+Started GET "/tailscope/api/queries" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::QueriesController#index as HTML
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.7ms)
+Started GET "/tailscope/api/queries?n_plus_one_only=true" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::QueriesController#index as HTML
+  Parameters: {"n_plus_one_only" => "true"}
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.4ms)
+Started GET "/tailscope/api/queries/5" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::QueriesController#show as HTML
+  Parameters: {"id" => "5"}
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.8ms)
+Started GET "/tailscope/api/queries/99999" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::QueriesController#show as HTML
+  Parameters: {"id" => "99999"}
+Completed 404 Not Found in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/requests" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::RequestsController#index as HTML
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.3ms)
+Started GET "/tailscope/api/requests/2" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::RequestsController#show as HTML
+  Parameters: {"id" => "2"}
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.8ms)
+Started GET "/tailscope/api/requests/99999" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::RequestsController#show as HTML
+  Parameters: {"id" => "99999"}
+Completed 404 Not Found in 4ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 1.4ms)
+Started GET "/tailscope/api/source?file=%2FUsers%2Fsilvia%2Fcode%2Faf%2Fos%2Frb%2Ftailscope%2Fspec%2Fdummy%2Fconfig%2Froutes.rb&line=3" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::SourceController#show as HTML
+  Parameters: {"file" => "/Users/silvia/code/af/os/rb/tailscope/spec/dummy/config/routes.rb", "line" => "3"}
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/source?file=%2Fetc%2Fpasswd&line=1" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::SourceController#show as HTML
+  Parameters: {"file" => "/etc/passwd", "line" => "1"}
+Completed 403 Forbidden in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.4ms)
+Started GET "/tailscope/api/source?file=%2FUsers%2Fsilvia%2Fcode%2Faf%2Fos%2Frb%2Ftailscope%2Fspec%2Fdummy%2Fnonexistent.rb&line=1" for 127.0.0.1 at 2026-02-03 12:53:36 +0530
+Processing by Tailscope::Api::SourceController#show as HTML
+  Parameters: {"file" => "/Users/silvia/code/af/os/rb/tailscope/spec/dummy/nonexistent.rb", "line" => "1"}
+Completed 404 Not Found in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/debugger" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::DebuggerController#index as HTML
+Completed 200 OK in 10ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/debugger/breakpoints" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::DebuggerController#create_breakpoint as HTML
+  Parameters: {"file" => "/Users/silvia/code/af/os/rb/tailscope/spec/dummy/config/routes.rb", "line" => "3"}
+Completed 200 OK in 1ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/debugger/breakpoints" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::DebuggerController#create_breakpoint as HTML
+  Parameters: {"file" => "/etc/passwd", "line" => "1"}
+Completed 403 Forbidden in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started DELETE "/tailscope/api/debugger/breakpoints/2" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::DebuggerController#remove_breakpoint as HTML
+  Parameters: {"id" => "2"}
+Completed 200 OK in 2ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/debugger/sessions/nonexistent" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::DebuggerController#show_session as HTML
+  Parameters: {"id" => "nonexistent"}
+Completed 404 Not Found in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/debugger/poll" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::DebuggerController#poll as HTML
+Completed 200 OK in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/debugger/browse" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::DebuggerController#browse as HTML
+Completed 200 OK in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/debugger/browse?path=%2FUsers%2Fsilvia%2Fcode%2Faf%2Fos%2Frb%2Ftailscope%2Fspec%2Fdummy%2Fconfig%2Froutes.rb" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::DebuggerController#browse as HTML
+  Parameters: {"path" => "/Users/silvia/code/af/os/rb/tailscope/spec/dummy/config/routes.rb"}
+Completed 200 OK in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/debugger/browse?path=%2Fetc" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::DebuggerController#browse as HTML
+  Parameters: {"path" => "/etc"}
+Completed 403 Forbidden in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/editor/open" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::EditorController#open as HTML
+  Parameters: {"file" => "/etc/passwd", "line" => "1"}
+Completed 403 Forbidden in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/editor/open" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::EditorController#open as HTML
+  Parameters: {"file" => "/Users/silvia/code/af/os/rb/tailscope/spec/dummy/nope.rb", "line" => "1"}
+Completed 404 Not Found in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/editor/open" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::EditorController#open as HTML
+  Parameters: {"file" => "/Users/silvia/code/af/os/rb/tailscope/spec/dummy/config/routes.rb", "line" => "1"}
+Completed 422 Unprocessable Content in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/editor/open" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::EditorController#open as HTML
+  Parameters: {"file" => "/Users/silvia/code/af/os/rb/tailscope/spec/dummy/config/routes.rb", "line" => "5"}
+Completed 200 OK in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/editor/check" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::EditorController#check as HTML
+  Parameters: {"editor" => "unknown"}
+Completed 422 Unprocessable Content in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/editor/check" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::EditorController#check as HTML
+  Parameters: {"editor" => "vscode"}
+Completed 200 OK in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/errors" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::ErrorsController#index as HTML
+Completed 200 OK in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/errors/2" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::ErrorsController#show as HTML
+  Parameters: {"id" => "2"}
+Completed 200 OK in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/errors/99999" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::ErrorsController#show as HTML
+  Parameters: {"id" => "99999"}
+Completed 404 Not Found in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/issues" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::IssuesController#index as HTML
+Completed 200 OK in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/issues?severity=critical" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::IssuesController#index as HTML
+  Parameters: {"severity" => "critical"}
+Completed 200 OK in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/issues?tab=ignored" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::IssuesController#index as HTML
+  Parameters: {"tab" => "ignored"}
+Completed 200 OK in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.1ms)
+Started POST "/tailscope/api/issues/abc123/ignore" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::IssuesController#ignore as HTML
+  Parameters: {"fingerprint" => "abc123"}
+Completed 200 OK in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/issues/abc123/unignore" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::IssuesController#unignore as HTML
+  Parameters: {"fingerprint" => "abc123"}
+Completed 200 OK in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/queries" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::QueriesController#index as HTML
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.5ms)
+Started GET "/tailscope/api/queries?n_plus_one_only=true" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::QueriesController#index as HTML
+  Parameters: {"n_plus_one_only" => "true"}
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.4ms)
+Started GET "/tailscope/api/queries/5" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::QueriesController#show as HTML
+  Parameters: {"id" => "5"}
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.3ms)
+Started GET "/tailscope/api/queries/99999" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::QueriesController#show as HTML
+  Parameters: {"id" => "99999"}
+Completed 404 Not Found in 1ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.4ms)
+Started GET "/tailscope/api/requests" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::RequestsController#index as HTML
+Completed 200 OK in 1ms (Views: 0.3ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.3ms)
+Started GET "/tailscope/api/requests/2" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::RequestsController#show as HTML
+  Parameters: {"id" => "2"}
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.8ms)
+Started GET "/tailscope/api/requests/99999" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::RequestsController#show as HTML
+  Parameters: {"id" => "99999"}
+Completed 404 Not Found in 1ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.3ms)
+Started GET "/tailscope/api/source?file=%2FUsers%2Fsilvia%2Fcode%2Faf%2Fos%2Frb%2Ftailscope%2Fspec%2Fdummy%2Fconfig%2Froutes.rb&line=3" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::SourceController#show as HTML
+  Parameters: {"file" => "/Users/silvia/code/af/os/rb/tailscope/spec/dummy/config/routes.rb", "line" => "3"}
+Completed 200 OK in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.1ms)
+Started GET "/tailscope/api/source?file=%2Fetc%2Fpasswd&line=1" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::SourceController#show as HTML
+  Parameters: {"file" => "/etc/passwd", "line" => "1"}
+Completed 403 Forbidden in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/source?file=%2FUsers%2Fsilvia%2Fcode%2Faf%2Fos%2Frb%2Ftailscope%2Fspec%2Fdummy%2Fnonexistent.rb&line=1" for 127.0.0.1 at 2026-02-03 14:02:10 +0530
+Processing by Tailscope::Api::SourceController#show as HTML
+  Parameters: {"file" => "/Users/silvia/code/af/os/rb/tailscope/spec/dummy/nonexistent.rb", "line" => "1"}
+Completed 404 Not Found in 0ms (Views: 0.0ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)

@@ -4,8 +4,8 @@ ENV["RAILS_ENV"] = "test"
 
 require_relative "dummy/config/application"
 
-# Initialize the dummy app
-Dummy::Application.initialize!
+# Initialize the dummy app (guard for mutant which may have already booted it)
+Dummy::Application.initialize! unless Dummy::Application.initialized?
 
 require "rspec/rails"
 require "tmpdir"

@@ -118,6 +118,49 @@ RSpec.describe Tailscope::Storage do
     end
   end
 
+  describe ".queries_for_request" do
+    it "returns queries matching a request_id" do
+      described_class.record_query(sql_text: "SELECT 1", duration_ms: 10.0, request_id: "req-abc")
+      described_class.record_query(sql_text: "SELECT 2", duration_ms: 20.0, request_id: "req-abc")
+      described_class.record_query(sql_text: "SELECT 3", duration_ms: 30.0, request_id: "req-other")
+
+      results = described_class.queries_for_request("req-abc")
+      expect(results.size).to eq(2)
+      expect(results.map { |r| r["sql_text"] }).to contain_exactly("SELECT 1", "SELECT 2")
+    end
+
+    it "returns empty array for nil request_id" do
+      expect(described_class.queries_for_request(nil)).to eq([])
+    end
+  end
+
+  describe ".errors_for_request" do
+    it "returns errors matching a request_id" do
+      described_class.record_error(exception_class: "E1", message: "m1", request_id: "req-abc")
+      described_class.record_error(exception_class: "E2", message: "m2", request_id: "req-other")
+
+      results = described_class.errors_for_request("req-abc")
+      expect(results.size).to eq(1)
+      expect(results.first["exception_class"]).to eq("E1")
+    end
+
+    it "returns empty array for nil request_id" do
+      expect(described_class.errors_for_request(nil)).to eq([])
+    end
+  end
+
+  describe ".recent_events" do
+    it "returns mixed events sorted by time" do
+      described_class.record_query(sql_text: "SELECT 1", duration_ms: 10.0)
+      described_class.record_request(method: "GET", path: "/", status: 200, duration_ms: 50.0)
+      described_class.record_error(exception_class: "E", message: "m")
+
+      events = described_class.recent_events(limit: 10)
+      expect(events.size).to eq(3)
+      expect(events.map { |e| e["type"] }).to contain_exactly("query", "request", "error")
+    end
+  end
+
   describe ".purge!" do
     it "removes old records" do
       described_class.record_query(sql_text: "old query", duration_ms: 50.0)

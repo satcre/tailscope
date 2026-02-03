@@ -1,0 +1,34 @@
+usage: opensource
+
+environment_variables:
+  RAILS_ENV: test
+
+integration:
+  name: rspec
+
+requires:
+  - ./spec/mutant_boot
+
+includes:
+  - lib
+
+mutation:
+  timeout: 30.0
+
+matcher:
+  subjects:
+    - "Tailscope::Configuration*"
+    - "Tailscope::Storage*"
+    - "Tailscope::Database*"
+    - "Tailscope::SourceLocator*"
+    - "Tailscope::IssueBuilder*"
+    - "Tailscope::CodeAnalyzer*"
+    - "Tailscope::Schema*"
+    - "Tailscope::Detectors::NPlusOne*"
+    - "Tailscope::Debugger::Session#*"
+    - "Tailscope::Debugger::SessionStore*"
+    - "Tailscope::Debugger::BreakpointManager*"
+    - "Tailscope::Debugger::TraceHook*"
+    - "Tailscope::Middleware::RequestTracker*"
+    - "Tailscope::Subscribers::SqlSubscriber*"
+    - "Tailscope::Subscribers::ActionSubscriber*"
