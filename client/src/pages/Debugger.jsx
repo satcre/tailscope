@@ -305,6 +305,10 @@ export default function Debugger() {
     loadFileBpLines(filePath)
   }, [loadFileBpLines])
 
+  const notifyBreakpointChange = () => {
+    window.dispatchEvent(new CustomEvent('tailscope:breakpoints-changed'))
+  }
+
   const toggleBreakpoint = async (file, line, isRemove, condition) => {
     if (isRemove) {
       const bp = data?.breakpoints.find((b) => b.file === file && b.line === line)
@@ -314,12 +318,14 @@ export default function Debugger() {
     }
     loadData()
     loadFileBpLines(file)
+    notifyBreakpointChange()
   }
 
   const removeBreakpoint = async (id) => {
     await api.del(`/debugger/breakpoints/${id}`)
     loadData()
     if (activeTab) loadFileBpLines(activeTab)
+    notifyBreakpointChange()
   }
 
   const goToBreakpoint = (bp) => {

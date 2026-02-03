@@ -46,23 +46,33 @@ module Tailscope
         enqueue([:error, attrs])
       end
 
+      def record_service(attrs)
+        enqueue([:service, attrs])
+      end
+
       def queries(limit: 50, offset: 0, n_plus_one_only: false)
         sql = "SELECT * FROM tailscope_queries"
         sql += " WHERE n_plus_one = 1" if n_plus_one_only
-        sql += " ORDER BY recorded_at DESC LIMIT ? OFFSET ?"
+        sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
         Tailscope::Database.connection.execute(sql, [limit, offset])
+      end
+
+      def requests_count
+        Tailscope::Database.connection.execute(
+          "SELECT COUNT(*) as count FROM tailscope_requests"
+        ).first["count"]
       end
 
       def requests(limit: 50, offset: 0)
         Tailscope::Database.connection.execute(
-          "SELECT * FROM tailscope_requests ORDER BY recorded_at DESC LIMIT ? OFFSET ?",
+          "SELECT * FROM tailscope_requests ORDER BY id DESC LIMIT ? OFFSET ?",
           [limit, offset]
         )
       end
 
       def errors(limit: 50, offset: 0)
         Tailscope::Database.connection.execute(
-          "SELECT * FROM tailscope_errors ORDER BY recorded_at DESC LIMIT ? OFFSET ?",
+          "SELECT * FROM tailscope_errors ORDER BY id DESC LIMIT ? OFFSET ?",
           [limit, offset]
         )
       end
@@ -106,6 +116,15 @@ module Tailscope
         )
       end
 
+      def services_for_request(request_id)
+        return [] unless request_id
+
+        Tailscope::Database.connection.execute(
+          "SELECT * FROM tailscope_services WHERE request_id = ? ORDER BY recorded_at ASC",
+          [request_id]
+        )
+      end
+
       def stats
         db = Tailscope::Database.connection
         {
@@ -118,6 +137,18 @@ module Tailscope
         }
       end
 
+      def delete_all_queries
+        Tailscope::Database.connection.execute("DELETE FROM tailscope_queries")
+      end
+
+      def delete_all_requests
+        Tailscope::Database.connection.execute("DELETE FROM tailscope_requests")
+      end
+
+      def delete_all_errors
+        Tailscope::Database.connection.execute("DELETE FROM tailscope_errors")
+      end
+
       def purge!(days: nil)
         days ||= Tailscope.configuration.storage_retention_days
         cutoff = (Time.now - (days * 86400)).strftime("%Y-%m-%d %H:%M:%S")
@@ -125,6 +156,7 @@ module Tailscope
         db.execute("DELETE FROM tailscope_queries WHERE recorded_at < ?", [cutoff])
         db.execute("DELETE FROM tailscope_requests WHERE recorded_at < ?", [cutoff])
         db.execute("DELETE FROM tailscope_errors WHERE recorded_at < ?", [cutoff])
+        db.execute("DELETE FROM tailscope_services WHERE recorded_at < ?", [cutoff])
       end
 
       # --- Ignored Issues ---
@@ -159,13 +191,13 @@ module Tailscope
       def recent_events(limit: 10)
         db = Tailscope::Database.connection
         queries = db.execute(
-          "SELECT id, 'query' as type, sql_text as summary, duration_ms, recorded_at FROM tailscope_queries ORDER BY recorded_at DESC LIMIT ?", [limit]
+          "SELECT id, 'query' as type, sql_text as summary, duration_ms, recorded_at FROM tailscope_queries ORDER BY id DESC LIMIT ?", [limit]
         )
         requests = db.execute(
-          "SELECT id, 'request' as type, method || ' ' || path as summary, duration_ms, recorded_at FROM tailscope_requests ORDER BY recorded_at DESC LIMIT ?", [limit]
+          "SELECT id, 'request' as type, method || ' ' || path as summary, duration_ms, recorded_at FROM tailscope_requests ORDER BY id DESC LIMIT ?", [limit]
         )
         errors = db.execute(
-          "SELECT id, 'error' as type, exception_class || ': ' || message as summary, duration_ms, recorded_at FROM tailscope_errors ORDER BY recorded_at DESC LIMIT ?", [limit]
+          "SELECT id, 'error' as type, exception_class || ': ' || message as summary, duration_ms, recorded_at FROM tailscope_errors ORDER BY id DESC LIMIT ?", [limit]
         )
         (queries + requests + errors).sort_by { |e| e["recorded_at"] || "" }.reverse.first(limit)
       end
@@ -194,11 +226,11 @@ module Tailscope
           )
         when :request
           db.execute(
-            "INSERT INTO tailscope_requests (method, path, status, duration_ms, controller, action, view_runtime_ms, db_runtime_ms, params, request_id, recorded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+            "INSERT INTO tailscope_requests (method, path, status, duration_ms, controller, action, view_runtime_ms, db_runtime_ms, params, request_id, source_file, source_line, recorded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
             [attrs[:method], attrs[:path], attrs[:status], attrs[:duration_ms],
              attrs[:controller], attrs[:action], attrs[:view_runtime_ms], attrs[:db_runtime_ms],
              attrs[:params].is_a?(Hash) ? JSON.dump(attrs[:params]) : attrs[:params],
-             attrs[:request_id]]
+             attrs[:request_id], attrs[:source_file], attrs[:source_line]]
           )
         when :error
           db.execute(
@@ -209,6 +241,14 @@ module Tailscope
              attrs[:request_method], attrs[:request_path],
              attrs[:params].is_a?(Hash) ? JSON.dump(attrs[:params]) : attrs[:params],
              attrs[:request_id], attrs[:duration_ms]]
+          )
+        when :service
+          db.execute(
+            "INSERT INTO tailscope_services (category, name, duration_ms, detail, source_file, source_line, source_method, request_id, recorded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+            [attrs[:category], attrs[:name], attrs[:duration_ms],
+             attrs[:detail].is_a?(Hash) ? JSON.dump(attrs[:detail]) : attrs[:detail],
+             attrs[:source_file], attrs[:source_line], attrs[:source_method],
+             attrs[:request_id]]
           )
         end
       end

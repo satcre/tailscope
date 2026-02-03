@@ -16,6 +16,10 @@ module Tailscope
         Tailscope.setup!
         Tailscope::Subscribers::SqlSubscriber.attach!
         Tailscope::Subscribers::ActionSubscriber.attach!
+        Tailscope::Subscribers::HttpSubscriber.attach!
+        Tailscope::Subscribers::JobSubscriber.attach!
+        Tailscope::Subscribers::MailerSubscriber.attach!
+        Tailscope::Subscribers::CacheSubscriber.attach!
       end
     end
 

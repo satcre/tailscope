@@ -7,8 +7,11 @@ Tailscope::Engine.routes.draw do
     post "issues/:fingerprint/unignore", to: "issues#unignore", as: :unignore_issue
 
     resources :queries, only: [:index, :show]
+    delete "queries", to: "queries#destroy_all"
     resources :requests, only: [:index, :show]
+    delete "requests", to: "requests#destroy_all"
     resources :errors, only: [:index, :show]
+    delete "errors", to: "errors#destroy_all"
 
     get "source", to: "source#show", as: :source
     post "editor/open", to: "editor#open", as: :editor_open

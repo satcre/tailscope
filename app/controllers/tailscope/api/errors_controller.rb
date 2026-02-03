@@ -14,6 +14,11 @@ module Tailscope
         }
       end
 
+      def destroy_all
+        Storage.delete_all_errors
+        head :no_content
+      end
+
       def show
         error = Storage.find_error(params[:id])
         return render(json: { error: "Not found" }, status: :not_found) unless error

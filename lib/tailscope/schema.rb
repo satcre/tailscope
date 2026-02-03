@@ -31,6 +31,8 @@ module Tailscope
           db_runtime_ms REAL,
           params TEXT,
           request_id TEXT,
+          source_file TEXT,
+          source_line INTEGER,
           recorded_at TEXT NOT NULL DEFAULT (datetime('now'))
         )
       SQL
@@ -62,6 +64,20 @@ module Tailscope
           UNIQUE(file, line)
         )
       SQL
+      tailscope_services: <<~SQL,
+        CREATE TABLE IF NOT EXISTS tailscope_services (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          category TEXT NOT NULL,
+          name TEXT,
+          duration_ms REAL,
+          detail TEXT,
+          source_file TEXT,
+          source_line INTEGER,
+          source_method TEXT,
+          request_id TEXT,
+          recorded_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      SQL
       tailscope_ignored_issues: <<~SQL
         CREATE TABLE IF NOT EXISTS tailscope_ignored_issues (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -81,7 +97,15 @@ module Tailscope
       "CREATE INDEX IF NOT EXISTS idx_requests_request_id ON tailscope_requests(request_id)",
       "CREATE INDEX IF NOT EXISTS idx_errors_recorded_at ON tailscope_errors(recorded_at)",
       "CREATE INDEX IF NOT EXISTS idx_errors_request_id ON tailscope_errors(request_id)",
+      "CREATE INDEX IF NOT EXISTS idx_services_recorded_at ON tailscope_services(recorded_at)",
+      "CREATE INDEX IF NOT EXISTS idx_services_request_id ON tailscope_services(request_id)",
+      "CREATE INDEX IF NOT EXISTS idx_services_category ON tailscope_services(category)",
       "CREATE INDEX IF NOT EXISTS idx_ignored_fingerprint ON tailscope_ignored_issues(fingerprint)",
+    ].freeze
+
+    MIGRATIONS = [
+      "ALTER TABLE tailscope_requests ADD COLUMN source_file TEXT",
+      "ALTER TABLE tailscope_requests ADD COLUMN source_line INTEGER",
     ].freeze
 
     class << self
@@ -89,6 +113,17 @@ module Tailscope
         db = Tailscope::Database.connection
         TABLES.each_value { |sql| db.execute(sql) }
         INDEXES.each { |sql| db.execute(sql) }
+        run_migrations!(db)
+      end
+
+      private
+
+      def run_migrations!(db)
+        MIGRATIONS.each do |sql|
+          db.execute(sql)
+        rescue StandardError
+          # column already exists — ignore
+        end
       end
     end
   end

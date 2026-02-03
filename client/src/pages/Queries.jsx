@@ -24,6 +24,13 @@ export default function Queries() {
 
   const truncate = (s, n = 120) => s && s.length > n ? s.slice(0, n) + '...' : s
 
+  const handleDeleteAll = () => {
+    if (!window.confirm('Delete all queries? This cannot be undone.')) return
+    api.del('/queries').then(() => {
+      setData({ queries: [], page: 1, per_page: 50, has_more: false })
+    })
+  }
+
   if (loading && !data) return <div className="text-gray-400">Loading...</div>
 
   return (
@@ -39,6 +46,10 @@ export default function Queries() {
             onClick={() => setSearchParams({ page: '1', n_plus_one: '1' })}
             className={`px-3 py-1 text-sm rounded ${nPlusOneOnly ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700'}`}
           >N+1 Only</button>
+          <button
+            onClick={handleDeleteAll}
+            className="px-3 py-1 text-sm rounded bg-red-600 text-white hover:bg-red-700"
+          >Delete All</button>
         </div>
       </div>
 

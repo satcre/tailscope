@@ -48,10 +48,12 @@ RSpec.describe Tailscope::Subscribers::ActionSubscriber do
         subscriber.handle(event)
       end
 
-      it "does not record requests below threshold" do
+      it "records fast requests too" do
         Tailscope.configuration.slow_request_threshold_ms = 500
         fast = double("Event", duration: 100.0, payload: payload)
-        expect(Tailscope::Storage).not_to receive(:record_request)
+        expect(Tailscope::Storage).to receive(:record_request).with(hash_including(
+          method: "GET", path: "/users", duration_ms: 100.0
+        ))
         subscriber.handle(fast)
       end
     end

@@ -15,6 +15,11 @@ module Tailscope
         }
       end
 
+      def destroy_all
+        Storage.delete_all_queries
+        head :no_content
+      end
+
       def show
         query = Storage.find_query(params[:id])
         return render(json: { error: "Not found" }, status: :not_found) unless query

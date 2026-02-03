@@ -14,10 +14,23 @@ export default function Requests() {
   const [loading, setLoading] = React.useState(true)
   const [selected, setSelected] = React.useState(null)
 
-  React.useEffect(() => {
-    setLoading(true)
+  const loadData = React.useCallback(() => {
     api.get(`/requests?page=${page}`).then(setData).finally(() => setLoading(false))
   }, [page])
+
+  React.useEffect(() => {
+    setLoading(true)
+    loadData()
+    const interval = setInterval(loadData, 3000)
+    return () => clearInterval(interval)
+  }, [loadData])
+
+  const handleDeleteAll = () => {
+    if (!window.confirm('Delete all requests? This cannot be undone.')) return
+    api.del('/requests').then(() => {
+      setData({ requests: [], total: 0, page: 1, per_page: 50, has_more: false })
+    })
+  }
 
   if (loading && !data) return <div className="text-gray-400">Loading...</div>
 
@@ -29,7 +42,18 @@ export default function Requests() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Requests</h1>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-baseline gap-3">
+          <h1 className="text-2xl font-bold">Requests</h1>
+          {data?.total != null && (
+            <span className="text-sm text-gray-500">{data.total.toLocaleString()} total</span>
+          )}
+        </div>
+        <button
+          onClick={handleDeleteAll}
+          className="px-3 py-1 text-sm rounded bg-red-600 text-white hover:bg-red-700"
+        >Delete All</button>
+      </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">

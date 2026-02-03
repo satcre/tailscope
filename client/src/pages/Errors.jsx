@@ -20,11 +20,24 @@ export default function Errors() {
     api.get(`/errors?page=${page}`).then(setData).finally(() => setLoading(false))
   }, [page])
 
+  const handleDeleteAll = () => {
+    if (!window.confirm('Delete all errors? This cannot be undone.')) return
+    api.del('/errors').then(() => {
+      setData({ errors: [], page: 1, per_page: 50, has_more: false })
+    })
+  }
+
   if (loading && !data) return <div className="text-gray-400">Loading...</div>
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Errors</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Errors</h1>
+        <button
+          onClick={handleDeleteAll}
+          className="px-3 py-1 text-sm rounded bg-red-600 text-white hover:bg-red-700"
+        >Delete All</button>
+      </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
