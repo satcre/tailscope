@@ -1,6 +1,20 @@
 # Detectors
 
-Tailscope uses several detection systems to identify performance issues and errors. Each detector operates automatically — no code changes required.
+Tailscope uses several detection systems to identify performance issues and errors. Each detector operates automatically -- no code changes required.
+
+---
+
+## Overview
+
+| Detector | Trigger | Implementation |
+|----------|---------|----------------|
+| [Slow Query](#slow-query-detector) | SQL duration exceeds threshold | `SqlSubscriber` |
+| [N+1 Query](#n1-query-detector) | Repeated identical queries per request | `NPlusOne` |
+| [Slow Request](#slow-request-detector) | HTTP request duration exceeds threshold | `ActionSubscriber` |
+| [Error](#error-detector) | Uncaught exception during request | `RequestTracker` middleware |
+| [Code Smell](#code-smell-detector) | Static analysis of `app/` files | `CodeAnalyzer` |
+
+---
 
 ## Slow Query Detector
 
@@ -10,20 +24,25 @@ Subscribes to Rails' `sql.active_record` ActiveSupport notification. Every SQL q
 
 **How it works:**
 
-1. When a query completes, the subscriber receives the event with duration and SQL text
+1. Query completes, subscriber receives the event with duration and SQL text
 2. Queries with `SCHEMA` or `EXPLAIN` in the name are ignored (internal Rails queries)
 3. Blank SQL is ignored
-4. The query is added to the current request's query log (`Thread.current[:tailscope_query_log]`) for N+1 analysis
-5. If duration exceeds `slow_query_threshold_ms`, the query source location is resolved and the query is recorded to storage
+4. Query is added to the current request's query log for N+1 analysis
+5. If duration exceeds `slow_query_threshold_ms`, the source location is resolved and the query is recorded
 
-**Source location resolution:** Uses `SourceLocator` to walk the call stack and find the first frame inside your application (filtering out gems, stdlib, and Tailscope internals). This tells you exactly which line of your code triggered the query.
+**Source location resolution:** Uses `SourceLocator` to walk the call stack and find the first frame inside your application (filtering out gems, stdlib, and Tailscope internals).
 
 **Recorded data:**
-- SQL text
-- Duration (milliseconds)
-- ActiveRecord event name (e.g., "User Load")
-- Source file, line, and method
-- Current request ID (for correlation)
+
+| Field | Description |
+|-------|-------------|
+| SQL text | The executed query |
+| Duration | Milliseconds |
+| Name | ActiveRecord event name (e.g., "User Load") |
+| Source file, line, method | Where in your code the query originated |
+| Request ID | For correlation with requests and errors |
+
+---
 
 ## N+1 Query Detector
 
@@ -33,46 +52,49 @@ Identifies N+1 query patterns by analyzing all queries within a single HTTP requ
 
 **How it works:**
 
-1. During a request, every SQL query is accumulated in `Thread.current[:tailscope_query_log]`
-2. At the end of the request (in middleware), `NPlusOne.analyze!` processes the log
+1. During a request, every SQL query accumulates in `Thread.current[:tailscope_query_log]`
+2. At request end, `NPlusOne.analyze!` processes the log
 3. Each query's SQL is **normalized**: numeric literals become `?`, string literals become `?`, whitespace is collapsed
-4. Queries are grouped by a key: `"normalized_sql||source_file:source_line"`
-5. Groups with count >= `n_plus_one_threshold` (default: 3) are flagged as N+1
+4. Queries are grouped by key: `"normalized_sql||source_file:source_line"`
+5. Groups with count >= `n_plus_one_threshold` (default: 3) are flagged
 
 **Example:**
 
 ```ruby
-# In controller:
+# Controller
 @users = User.all
 
-# In view (N+1):
+# View (N+1)
 <% @users.each do |user| %>
-  <%= user.company.name %>  <%# This triggers a SELECT for each user %>
+  <%= user.company.name %>  <%# Triggers a SELECT for each user %>
 <% end %>
 ```
 
-This produces queries like:
+Produces queries like:
+
 ```sql
 SELECT "companies".* FROM "companies" WHERE "companies"."id" = 1
 SELECT "companies".* FROM "companies" WHERE "companies"."id" = 2
 SELECT "companies".* FROM "companies" WHERE "companies"."id" = 3
-...
 ```
 
-After normalization, all become: `SELECT ? FROM ? WHERE ? = ?`
-
-Since they share the same normalized SQL and originate from the same source line, they're grouped and flagged as N+1 with the total count.
+After normalization, all become `SELECT ? FROM ? WHERE ? = ?` -- same SQL, same source line, flagged as N+1.
 
 **Recorded data:**
-- SQL text (of one representative query)
-- Total duration across all occurrences
-- Source file and line
-- N+1 flag and count
 
-**Common fixes suggested by Tailscope:**
+| Field | Description |
+|-------|-------------|
+| SQL text | One representative query |
+| Total duration | Across all occurrences |
+| Source file and line | Where the N+1 originates |
+| N+1 flag and count | Number of repeated queries |
+
+**Common fixes:**
 - Add `includes(:association)` to eager-load
 - Use `preload` or `eager_load` for specific cases
 - Use `pluck` if you only need a single column
+
+---
 
 ## Slow Request Detector
 
@@ -82,23 +104,31 @@ Subscribes to Rails' `process_action.action_controller` notification, which fire
 
 **How it works:**
 
-1. When a controller action completes, the subscriber receives the event with total duration
-2. Actions from Tailscope's own controllers are ignored (avoids recording dashboard requests)
+1. Controller action completes, subscriber receives the event with total duration
+2. Actions from Tailscope's own controllers are ignored
 3. If duration exceeds `slow_request_threshold_ms`, the request is recorded
 
 **Recorded data:**
-- HTTP method, path, status code
-- Total duration (milliseconds)
-- View render time (milliseconds)
-- Database time (milliseconds)
-- Controller name and action
-- Request params (excluding `controller` and `action` keys)
-- Request ID (for query/error correlation)
 
-**Time breakdown:** The view and DB times help identify where slowness comes from:
-- High view time → template rendering is slow (consider caching or simplifying views)
-- High DB time → queries are slow (check the associated queries)
-- High total but low view+DB → application logic is slow (look for CPU-bound operations)
+| Field | Description |
+|-------|-------------|
+| HTTP method, path, status | Request details |
+| Total duration | Milliseconds |
+| View render time | Template rendering (ms) |
+| Database time | SQL execution (ms) |
+| Controller and action | Which action handled the request |
+| Params | Request parameters (excluding `controller`/`action`) |
+| Request ID | For query/error correlation |
+
+**Diagnosing slowness from time breakdown:**
+
+| Pattern | Likely cause |
+|---------|-------------|
+| High view time | Template rendering is slow -- consider caching or simplifying views |
+| High DB time | Queries are slow -- check associated queries |
+| High total, low view+DB | Application logic is slow -- look for CPU-bound operations |
+
+---
 
 ## Error Detector
 
@@ -109,23 +139,28 @@ A Rack middleware that wraps every request in a begin/rescue block.
 **How it works:**
 
 1. Records request start time and generates a request ID
-2. Sets `Thread.current[:tailscope_request_id]` for query/request correlation
+2. Sets `Thread.current[:tailscope_request_id]` for correlation
 3. Passes the request through the middleware stack
 4. If an exception occurs, captures it before re-raising
 5. At request end, triggers N+1 analysis on the accumulated query log
 
 **Recorded data:**
-- Exception class name
-- Exception message (first 1000 characters)
-- Backtrace (first 20 frames)
-- Source file, line, and method (from backtrace)
-- HTTP method, path, and params
-- Request ID
-- Duration to error (how long the request ran before the exception)
 
-**Behavior:** Tailscope never suppresses exceptions. After recording, the exception is re-raised so your existing error handling (rescue_from, error pages, etc.) works unchanged.
+| Field | Description |
+|-------|-------------|
+| Exception class | e.g., `ActiveRecord::RecordNotFound` |
+| Message | First 1000 characters |
+| Backtrace | First 20 frames |
+| Source file, line, method | From backtrace |
+| HTTP method, path, params | Request context |
+| Request ID | For correlation |
+| Duration to error | How long the request ran before the exception |
+
+> Tailscope never suppresses exceptions. After recording, the exception is re-raised so your existing error handling works unchanged.
 
 **Filtered requests:** Requests to Tailscope's own routes (`/tailscope/*`) are excluded from tracking.
+
+---
 
 ## Code Smell Detector
 
@@ -134,6 +169,8 @@ A Rack middleware that wraps every request in a begin/rescue block.
 Static analysis of Ruby files in your `app/` directory. Unlike the other detectors, this runs on-demand when the Issues page is loaded (not during request processing).
 
 See [Code Analysis](code-analysis.md) for the complete list of rules.
+
+---
 
 ## Source Locator
 
@@ -151,4 +188,8 @@ A shared utility used by all detectors to resolve the application source locatio
    - Bundle paths (`/vendor/bundle/`)
 3. Returns the first frame with an `absolute_path` inside the application
 
-**Returns:** `{ source_file: "/path/to/file.rb", source_line: 42, source_method: "index" }`
+**Returns:**
+
+```ruby
+{ source_file: "/path/to/file.rb", source_line: 42, source_method: "index" }
+```

@@ -2,9 +2,9 @@
 
 Tailscope includes a command-line interface for terminal-based access to captured data. The CLI reads directly from the SQLite database and does not require the Rails server to be running.
 
-## Setup
+---
 
-The CLI is available after installing the gem:
+## Setup
 
 ```bash
 bundle exec tailscope [command]
@@ -16,7 +16,21 @@ Or if the gem's `bin` directory is in your `$PATH`:
 tailscope [command]
 ```
 
+---
+
 ## Commands
+
+| Command | Description |
+|---------|-------------|
+| [`stats`](#stats) | Display summary statistics |
+| [`queries`](#queries) | List recorded slow queries |
+| [`requests`](#requests) | List recorded slow requests |
+| [`errors`](#errors) | List recorded exceptions |
+| [`tail`](#tail) | Live polling mode |
+| [`show`](#show) | Show detail for a specific record |
+| [`purge`](#purge) | Delete old records |
+
+---
 
 ### `stats`
 
@@ -26,7 +40,6 @@ Display summary statistics.
 tailscope stats
 ```
 
-Output:
 ```
 Tailscope Statistics
 ------------------------------
@@ -38,6 +51,8 @@ Avg query time:  234ms
 Avg request time:892ms
 ```
 
+---
+
 ### `queries`
 
 List recorded slow queries.
@@ -48,29 +63,25 @@ tailscope queries [options]
 
 | Option | Short | Default | Description |
 |--------|-------|---------|-------------|
-| `--n_plus_one` | `-n` | false | Show only N+1 queries |
-| `--limit` | `-l` | 20 | Number of records to show |
+| `--n_plus_one` | `-n` | `false` | Show only N+1 queries |
+| `--limit` | `-l` | `20` | Number of records to show |
 
-Examples:
+**Examples:**
 
 ```bash
-# List recent slow queries
-tailscope queries
-
-# Show only N+1 patterns
-tailscope queries -n
-
-# Show more results
-tailscope queries -l 50
+tailscope queries           # List recent slow queries
+tailscope queries -n        # Show only N+1 patterns
+tailscope queries -l 50     # Show more results
 ```
 
-Output:
 ```
 ID     Duration   SQL                                                          Source
 --------------------------------------------------------------------------------------------------------------
 142    234ms      SELECT "users".* FROM "users" WHERE "users"."emai...         app/controllers/users_controller.rb:15
 141    156ms      SELECT "orders".* FROM "orders" WHERE "orders"."u... [N+1 x8] app/views/users/show.html.erb:23
 ```
+
+---
 
 ### `requests`
 
@@ -82,15 +93,16 @@ tailscope requests [options]
 
 | Option | Short | Default | Description |
 |--------|-------|---------|-------------|
-| `--limit` | `-l` | 20 | Number of records to show |
+| `--limit` | `-l` | `20` | Number of records to show |
 
-Output:
 ```
 ID     Method  Path                                     Status Duration   Controller#Action
 -----------------------------------------------------------------------------------------------
 28     GET     /users/42                                200    892ms      UsersController#show
 27     POST    /orders                                  201    1234ms     OrdersController#create
 ```
+
+---
 
 ### `errors`
 
@@ -102,15 +114,16 @@ tailscope errors [options]
 
 | Option | Short | Default | Description |
 |--------|-------|---------|-------------|
-| `--limit` | `-l` | 20 | Number of records to show |
+| `--limit` | `-l` | `20` | Number of records to show |
 
-Output:
 ```
 ID     Exception                      Message                                            Source
 ------------------------------------------------------------------------------------------------------------------------
 5      ActiveRecord::RecordNotFound   Couldn't find User with 'id'=999                   app/controllers/users_controller.rb:8
 4      NoMethodError                  undefined method `name' for nil                     app/views/orders/show.html.erb:12
 ```
+
+---
 
 ### `tail`
 
@@ -122,9 +135,8 @@ tailscope tail [options]
 
 | Option | Short | Default | Description |
 |--------|-------|---------|-------------|
-| `--interval` | `-i` | 2 | Poll interval in seconds |
+| `--interval` | `-i` | `2` | Poll interval in seconds |
 
-Output:
 ```
 Tailscope — live tail (Ctrl+C to stop)
 ------------------------------------------------------------
@@ -135,6 +147,8 @@ Tailscope — live tail (Ctrl+C to stop)
 
 Press `Ctrl+C` to stop.
 
+---
+
 ### `show`
 
 Show detailed information about a specific record.
@@ -143,9 +157,9 @@ Show detailed information about a specific record.
 tailscope show [category] [id]
 ```
 
-Categories: `query`, `request`, `error`
+**Categories:** `query`, `request`, `error`
 
-Examples:
+**Examples:**
 
 ```bash
 tailscope show query 142
@@ -153,7 +167,6 @@ tailscope show request 28
 tailscope show error 5
 ```
 
-Output shows all fields for the record:
 ```
 id: 142
 sql_text: SELECT "users".* FROM "users" WHERE "users"."email" = ? LIMIT ?
@@ -167,6 +180,8 @@ n_plus_one: 0
 recorded_at: 2024-01-15 14:23:01
 ```
 
+---
+
 ### `purge`
 
 Delete old records from the database.
@@ -179,15 +194,14 @@ tailscope purge [options]
 |--------|-------|---------|-------------|
 | `--days` | | `storage_retention_days` config | Delete records older than N days |
 
-Examples:
+**Examples:**
 
 ```bash
-# Use configured retention period
-tailscope purge
-
-# Delete records older than 3 days
-tailscope purge --days 3
+tailscope purge            # Use configured retention period
+tailscope purge --days 3   # Delete records older than 3 days
 ```
+
+---
 
 ## Database Location
 

@@ -2,6 +2,8 @@
 
 Tailscope can open source files at the exact line in your editor with one click. This works from any source location shown in the dashboard -- issues, queries, requests, errors, and the debugger.
 
+---
+
 ## Supported Editors
 
 | Editor | Config Symbol | Command |
@@ -11,6 +13,8 @@ Tailscope can open source files at the exact line in your editor with one click.
 | RubyMine | `:rubymine` | `mine {project} --line {line} {file}` |
 | Neovim (Terminal.app) | `:nvim_terminal` | `nvim +{line} {file}` |
 | Neovim (iTerm2) | `:nvim_iterm` | `nvim +{line} {file}` |
+
+---
 
 ## Configuration
 
@@ -38,6 +42,8 @@ config.editor = "emacs +{line} {file}"
 
 All paths are shell-escaped automatically.
 
+---
+
 ## Auto-Detection
 
 If no editor is configured, Tailscope tries to detect one:
@@ -47,6 +53,8 @@ If no editor is configured, Tailscope tries to detect one:
 3. Uses the first one found
 
 The detection happens at runtime, so setting `$EDITOR` in your shell profile works.
+
+---
 
 ## macOS App Bundle Resolution
 
@@ -60,22 +68,21 @@ Tailscope handles this by resolving the full binary path inside the `.app` bundl
 | Sublime Text | `/Applications/Sublime Text.app/Contents/SharedSupport/bin/subl` |
 | RubyMine | `/Applications/RubyMine.app/Contents/MacOS/rubymine` |
 
-Both `/Applications/` and `~/Applications/` are checked.
+Both `/Applications/` and `~/Applications/` are checked. This resolution happens automatically for preset editor symbols.
 
-This resolution happens automatically when using a preset editor symbol. No configuration needed.
+---
 
 ## Terminal Editors
 
 Terminal editors (Neovim) require special handling since they need to open in a terminal window.
 
-**macOS with Terminal.app** (`:nvim_terminal`):
-- Uses AppleScript to open a new Terminal window and run the command
+| Platform | Config | Behavior |
+|----------|--------|----------|
+| macOS + Terminal.app | `:nvim_terminal` | Opens a new Terminal window via AppleScript |
+| macOS + iTerm2 | `:nvim_iterm` | Creates a new iTerm2 session via AppleScript |
+| Linux | `:nvim_terminal` | Uses `x-terminal-emulator` to open a new terminal |
 
-**macOS with iTerm2** (`:nvim_iterm`):
-- Uses AppleScript to create a new iTerm2 session
-
-**Linux** (`:nvim_terminal`):
-- Uses `x-terminal-emulator` to open a new terminal window
+---
 
 ## Custom Command Examples
 
@@ -93,13 +100,19 @@ config.editor = "mate -l {line} {file}"
 config.editor = "cursor -r -g {file}:{line} {project}"
 ```
 
+---
+
 ## Dashboard Editor Selector
 
 The dashboard includes an editor dropdown that lets you switch editors at runtime without changing the server configuration. The selection is stored in the browser's local storage.
 
+---
+
 ## Checking Editor Availability
 
-The dashboard has an editor check feature. When you select an editor, it calls the `/api/editor/check` endpoint to verify the editor binary is available on the server. If not found, you'll see a warning.
+When you select an editor in the dashboard, it calls `/api/editor/check` to verify the editor binary is available on the server. If not found, you'll see a warning.
+
+---
 
 ## Security
 
@@ -108,21 +121,13 @@ The dashboard has an editor check feature. When you select an editor, it calls t
 - Files must exist on disk
 - All arguments are shell-escaped to prevent command injection
 
+---
+
 ## Troubleshooting
 
-**"No editor configured" error:**
-- Set `config.editor` in the initializer, or ensure `$EDITOR` is set in the server's environment
-
-**Editor opens but wrong file/line:**
-- Check that your custom command uses the correct placeholder syntax: `{file}`, `{line}`, `{project}`
-
-**VS Code opens but doesn't navigate to the file (macOS):**
-- This usually means the `code` CLI isn't in the server's `$PATH`. Tailscope resolves this automatically for preset editors. If using a custom command, use the full path:
-  ```ruby
-  config.editor = "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code -r -g {file}:{line} {project}"
-  ```
-
-**Nothing happens when clicking "Open in Editor":**
-- Check the browser console for network errors
-- Verify the editor binary exists: `which code` (or `which subl`, etc.)
-- On macOS, check both `/Applications/` and `~/Applications/`
+| Problem | Solution |
+|---------|----------|
+| "No editor configured" error | Set `config.editor` in the initializer, or ensure `$EDITOR` is set |
+| Editor opens but wrong file/line | Check that custom command uses `{file}`, `{line}`, `{project}` placeholders |
+| VS Code opens but doesn't navigate (macOS) | Tailscope resolves this automatically for preset editors. For custom commands, use the full path: `/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code` |
+| Nothing happens on click | Check browser console for network errors. Verify the editor binary exists: `which code` |

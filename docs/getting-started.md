@@ -1,11 +1,13 @@
 # Getting Started
 
- > [!CAUTION]
+> [!CAUTION]
 > **Early stage.** Tailscope is under active development and has not been battle-tested in production. APIs, configuration, and internal behavior may change. Use in development environments only.
+
+---
 
 ## Installation
 
-Add Tailscope to your Gemfile. It should only run in development:
+Add Tailscope to your Gemfile (development only):
 
 ```ruby
 group :development do
@@ -13,22 +15,16 @@ group :development do
 end
 ```
 
-Install the gem:
+Install and run the generator:
 
 ```bash
 bundle install
-```
-
-Run the install generator:
-
-```bash
 rails generate tailscope:install
 ```
 
-This does two things:
+This creates `config/initializers/tailscope.rb` with default configuration and mounts the engine in `config/routes.rb` at `/tailscope`.
 
-1. Creates `config/initializers/tailscope.rb` with default configuration
-2. Mounts the engine in your `config/routes.rb` at `/tailscope`
+---
 
 ## First Run
 
@@ -42,9 +38,11 @@ Visit **`http://localhost:3000/tailscope`** in your browser. You'll see an empty
 
 Now use your application normally. As you navigate pages, Tailscope silently records slow queries, N+1 patterns, slow requests, and errors. Refresh the Tailscope dashboard to see captured issues.
 
+---
+
 ## What Gets Recorded
 
-Tailscope begins recording automatically when your Rails app starts. By default, it captures:
+Tailscope begins recording automatically when your Rails app starts:
 
 | Category | Condition | Default Threshold |
 |----------|-----------|-------------------|
@@ -54,13 +52,17 @@ Tailscope begins recording automatically when your Rails app starts. By default,
 | Errors | Any uncaught exception during a request | All |
 | Code Smells | Static analysis of `app/` Ruby files | On-demand |
 
+---
+
 ## Dashboard Overview
 
-The main dashboard shows aggregated **issues** — deduplicated problems sorted by severity:
+The main dashboard shows aggregated **issues** -- deduplicated problems sorted by severity:
 
-- **Critical** -- Data exposure, hardcoded secrets, frequent N+1 patterns
-- **Warning** -- Slow queries, missing validations, fat controllers
-- **Info** -- TODO comments, long methods, Law of Demeter violations
+| Severity | Examples |
+|----------|----------|
+| **Critical** | Data exposure, hardcoded secrets, frequent N+1 patterns |
+| **Warning** | Slow queries, missing validations, fat controllers |
+| **Info** | TODO comments, long methods, Law of Demeter violations |
 
 Each issue includes:
 - Source file and line number
@@ -69,40 +71,39 @@ Each issue includes:
 - A button to view the source code inline
 - A button to open the file in your editor
 
+---
+
 ## Navigation
 
 The dashboard has seven pages accessible from the navigation bar:
 
-- **Issues** -- Aggregated view of all detected problems (default)
-- **Queries** -- Individual slow SQL queries with source locations
-- **Requests** -- Individual slow HTTP requests with controller/action detail
-- **Errors** -- Individual captured exceptions with backtraces
-- **Jobs** -- Background job executions with queue and duration detail
-- **Tests** -- Browser-based RSpec test runner with file tree and results
-- **Debugger** -- Interactive breakpoint debugger (requires separate opt-in)
+| Page | Description |
+|------|-------------|
+| **Issues** | Aggregated view of all detected problems (default) |
+| **Queries** | Individual slow SQL queries with source locations |
+| **Requests** | Individual slow HTTP requests with controller/action detail |
+| **Errors** | Individual captured exceptions with backtraces |
+| **Jobs** | Background job executions with queue and duration detail |
+| **Tests** | Browser-based RSpec test runner with file tree and results |
+| **Debugger** | Interactive breakpoint debugger (requires separate opt-in) |
+
+---
 
 ## CLI Access
 
 Tailscope includes a command-line interface for terminal-based workflows:
 
 ```bash
-# Summary statistics
-tailscope stats
-
-# List slow queries
-tailscope queries
-
-# List N+1 queries only
-tailscope queries -n
-
-# Live tail mode (polls for new events)
-tailscope tail
-
-# Show detail for a specific record
-tailscope show query 42
+tailscope stats              # Summary statistics
+tailscope queries            # List slow queries
+tailscope queries -n         # List N+1 queries only
+tailscope tail               # Live tail mode (polls for new events)
+tailscope show query 42      # Show detail for a specific record
 ```
 
 See the [CLI Reference](cli.md) for all commands.
+
+---
 
 ## Next Steps
 

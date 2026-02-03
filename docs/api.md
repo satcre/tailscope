@@ -4,20 +4,33 @@ Tailscope exposes a JSON REST API under `/tailscope/api/`. This API powers the w
 
 All endpoints return JSON. The API is mounted within the Rails engine and shares the application's session and CSRF protection.
 
+---
+
+## Endpoints Overview
+
+| Section | Endpoints |
+|---------|-----------|
+| [Issues](#issues) | List, ignore, unignore |
+| [Queries](#queries) | List, show |
+| [Requests](#requests) | List, show with associated queries/errors |
+| [Errors](#errors) | List, show |
+| [Tests](#tests) | Discover specs, run, status, cancel, dry-run examples |
+| [Source](#source) | Get source code context |
+| [Editor](#editor) | Open file, check availability |
+| [Debugger](#debugger) | Breakpoints, sessions, stepping, file browsing |
+
+---
+
 ## Issues
 
 ### `GET /tailscope/api/issues`
 
 Returns aggregated issues from all detection sources.
 
-**Parameters:**
-
-| Name | Type | Description |
-|------|------|-------------|
-| `severity` | string | Filter by severity: `critical`, `warning`, `info` |
+| Param | Type | Description |
+|-------|------|-------------|
+| `severity` | string | Filter: `critical`, `warning`, `info` |
 | `tab` | string | `ignored` to show only ignored issues |
-
-**Response:**
 
 ```json
 {
@@ -37,26 +50,20 @@ Returns aggregated issues from all detection sources.
       "metadata": {}
     }
   ],
-  "counts": {
-    "critical": 2,
-    "warning": 5,
-    "info": 8
-  },
+  "counts": { "critical": 2, "warning": 5, "info": 8 },
   "ignored_count": 1
 }
 ```
 
 ### `POST /tailscope/api/issues/:fingerprint/ignore`
 
-Mark an issue as ignored.
-
-**Response:** `{ "ok": true }`
+Mark an issue as ignored. Returns `{ "ok": true }`.
 
 ### `POST /tailscope/api/issues/:fingerprint/unignore`
 
-Remove ignored status from an issue.
+Remove ignored status. Returns `{ "ok": true }`.
 
-**Response:** `{ "ok": true }`
+---
 
 ## Queries
 
@@ -64,14 +71,10 @@ Remove ignored status from an issue.
 
 List recorded slow queries.
 
-**Parameters:**
-
-| Name | Type | Default | Description |
-|------|------|---------|-------------|
-| `page` | integer | 1 | Page number |
-| `n_plus_one_only` | boolean | false | Filter to N+1 patterns only |
-
-**Response:**
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `page` | integer | `1` | Page number |
+| `n_plus_one_only` | boolean | `false` | Filter to N+1 patterns only |
 
 ```json
 {
@@ -98,11 +101,9 @@ List recorded slow queries.
 
 ### `GET /tailscope/api/queries/:id`
 
-Get a single query record.
+Get a single query record. Same structure as list item. Returns `404` if not found.
 
-**Response:** Single query object (same structure as list item).
-
-Returns `404` if not found.
+---
 
 ## Requests
 
@@ -110,13 +111,9 @@ Returns `404` if not found.
 
 List recorded slow requests.
 
-**Parameters:**
-
-| Name | Type | Default | Description |
-|------|------|---------|-------------|
-| `page` | integer | 1 | Page number |
-
-**Response:**
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `page` | integer | `1` | Page number |
 
 ```json
 {
@@ -144,9 +141,7 @@ List recorded slow requests.
 
 ### `GET /tailscope/api/requests/:id`
 
-Get a single request record with associated queries and errors.
-
-**Response:**
+Get a single request with associated queries and errors.
 
 ```json
 {
@@ -158,19 +153,17 @@ Get a single request record with associated queries and errors.
 
 Returns `404` if not found.
 
+---
+
 ## Errors
 
 ### `GET /tailscope/api/errors`
 
 List recorded exceptions.
 
-**Parameters:**
-
-| Name | Type | Default | Description |
-|------|------|---------|-------------|
-| `page` | integer | 1 | Page number |
-
-**Response:**
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `page` | integer | `1` | Page number |
 
 ```json
 {
@@ -199,17 +192,15 @@ List recorded exceptions.
 
 ### `GET /tailscope/api/errors/:id`
 
-Get a single error record.
+Get a single error record. Returns `404` if not found.
 
-Returns `404` if not found.
+---
 
 ## Tests
 
 ### `GET /tailscope/api/tests/specs`
 
-Discover spec files in the project. Returns a tree structure of `spec/` directory.
-
-**Response:**
+Discover spec files in the project. Returns a tree structure of the `spec/` directory.
 
 ```json
 {
@@ -239,19 +230,12 @@ Returns `{ "available": false, "tree": [] }` if RSpec is not installed.
 
 Start a spec run.
 
-**Parameters:**
-
-| Name | Type | Description |
-|------|------|-------------|
-| `target` | string | Optional. Spec file or directory path (e.g. `spec/models/user_spec.rb` or `spec/models/`). Omit to run all specs. Supports line targeting: `spec/models/user_spec.rb:15` |
-
-**Response:**
+| Param | Type | Description |
+|-------|------|-------------|
+| `target` | string | Optional. Spec file or directory path. Supports line targeting: `spec/models/user_spec.rb:15`. Omit to run all specs. |
 
 ```json
-{
-  "id": "a1b2c3d4e5f6",
-  "status": "running"
-}
+{ "id": "a1b2c3d4e5f6", "status": "running" }
 ```
 
 Returns `409` with `{ "error": "Already running" }` if a run is in progress.
@@ -259,8 +243,6 @@ Returns `409` with `{ "error": "Already running" }` if a run is in progress.
 ### `GET /tailscope/api/tests/status`
 
 Get the status and results of the current or most recent spec run.
-
-**Response:**
 
 ```json
 {
@@ -294,7 +276,7 @@ Get the status and results of the current or most recent spec run.
 }
 ```
 
-Status values: `running`, `finished`, `error`, `cancelled`.
+**Status values:** `running`, `finished`, `error`, `cancelled`
 
 Failed examples include an `exception` object:
 
@@ -312,7 +294,7 @@ Failed examples include an `exception` object:
 
 Cancel a running spec execution.
 
-**Response:** `{ "status": "cancelled" }`
+Returns `{ "status": "cancelled" }`.
 
 Returns `409` with `{ "error": "No run in progress" }` if nothing is running.
 
@@ -320,13 +302,9 @@ Returns `409` with `{ "error": "No run in progress" }` if nothing is running.
 
 Dry-run to discover examples in a spec file without executing them. Uses `rspec --dry-run`.
 
-**Parameters:**
-
-| Name | Type | Description |
-|------|------|-------------|
+| Param | Type | Description |
+|-------|------|-------------|
 | `target` | string | **Required.** Spec file path (e.g. `spec/models/user_spec.rb`) |
-
-**Response:**
 
 ```json
 {
@@ -342,21 +320,19 @@ Dry-run to discover examples in a spec file without executing them. Uses `rspec 
 }
 ```
 
+---
+
 ## Source
 
 ### `GET /tailscope/api/source`
 
 Get source code context around a specific line.
 
-**Parameters:**
-
-| Name | Type | Description |
-|------|------|-------------|
+| Param | Type | Description |
+|-------|------|-------------|
 | `file` | string | **Required.** Absolute or relative path (resolved against `source_root`) |
 | `line` | integer | **Required.** Line number to highlight |
-| `radius` | integer | Optional. Context lines above and below. Default: 50, range: 10–200 |
-
-**Response:**
+| `radius` | integer | Optional. Context lines above and below. Default: `50`, range: `10`-`200` |
 
 ```json
 {
@@ -369,8 +345,12 @@ Get source code context around a specific line.
 }
 ```
 
-Returns `403` if the file is outside `source_root`.
-Returns `404` if the file doesn't exist.
+| Status | Condition |
+|--------|-----------|
+| `403` | File is outside `source_root` |
+| `404` | File doesn't exist |
+
+---
 
 ## Editor
 
@@ -378,41 +358,39 @@ Returns `404` if the file doesn't exist.
 
 Open a file in the configured editor.
 
-**Parameters:**
-
-| Name | Type | Description |
-|------|------|-------------|
+| Param | Type | Description |
+|-------|------|-------------|
 | `file` | string | **Required.** Absolute path to the file |
 | `line` | integer | **Required.** Line number to open at |
 | `editor` | string | Optional. Override editor selection |
 
-**Response:** `{ "ok": true, "editor": "vscode" }`
+Returns `{ "ok": true, "editor": "vscode" }`.
 
-Returns `403` if the file is outside `source_root`.
-Returns `404` if the file doesn't exist.
-Returns `422` if no editor is configured or available.
+| Status | Condition |
+|--------|-----------|
+| `403` | File is outside `source_root` |
+| `404` | File doesn't exist |
+| `422` | No editor configured or available |
 
 ### `POST /tailscope/api/editor/check`
 
 Check if an editor binary is available.
 
-**Parameters:**
-
-| Name | Type | Description |
-|------|------|-------------|
+| Param | Type | Description |
+|-------|------|-------------|
 | `editor` | string | **Required.** Editor name: `vscode`, `sublime`, `rubymine`, `nvim_terminal`, `nvim_iterm` |
 
-**Response:** `{ "available": true, "editor": "vscode" }`
+Returns `{ "available": true, "editor": "vscode" }`.
 
 Returns `422` for unknown editor names.
+
+---
 
 ## Debugger
 
 ### `GET /tailscope/api/debugger`
 
 Get debugger state including breakpoints and sessions.
-
-**Response:**
 
 ```json
 {
@@ -428,29 +406,23 @@ Get debugger state including breakpoints and sessions.
 
 Create a new breakpoint.
 
-**Parameters:**
-
-| Name | Type | Description |
-|------|------|-------------|
+| Param | Type | Description |
+|-------|------|-------------|
 | `file` | string | **Required.** Absolute or relative path (resolved against `source_root`) |
 | `line` | integer | **Required.** Line number |
 | `condition` | string | Optional. Ruby expression for conditional breakpoint |
 
-**Response:** `{ "ok": true, "breakpoint": { ... } }`
+Returns `{ "ok": true, "breakpoint": { ... } }`.
 
 Returns `403` if the file is outside `source_root`.
 
 ### `DELETE /tailscope/api/debugger/breakpoints/:id`
 
-Remove a breakpoint.
-
-**Response:** `{ "ok": true }`
+Remove a breakpoint. Returns `{ "ok": true }`.
 
 ### `GET /tailscope/api/debugger/sessions/:id`
 
 Get a specific debug session with variables and source context.
-
-**Response:**
 
 ```json
 {
@@ -470,35 +442,24 @@ Returns `404` if session not found.
 
 Evaluate a Ruby expression in the session's binding.
 
-**Parameters:**
-
-| Name | Type | Description |
-|------|------|-------------|
+| Param | Type | Description |
+|-------|------|-------------|
 | `expression` | string | **Required.** Ruby expression to evaluate |
 
-**Response:** `{ "result": "evaluated result as string" }`
+Returns `{ "result": "evaluated result as string" }`.
 
-### `POST /tailscope/api/debugger/sessions/:id/continue`
+### Stepping Endpoints
 
-Continue execution until next breakpoint.
-
-### `POST /tailscope/api/debugger/sessions/:id/step_into`
-
-Step to the next line of Ruby (entering method calls).
-
-### `POST /tailscope/api/debugger/sessions/:id/step_over`
-
-Step to the next line at the same call depth.
-
-### `POST /tailscope/api/debugger/sessions/:id/step_out`
-
-Continue until the current method returns.
+| Endpoint | Action |
+|----------|--------|
+| `POST /tailscope/api/debugger/sessions/:id/continue` | Continue until next breakpoint |
+| `POST /tailscope/api/debugger/sessions/:id/step_into` | Step to next line (entering methods) |
+| `POST /tailscope/api/debugger/sessions/:id/step_over` | Step to next line at same depth |
+| `POST /tailscope/api/debugger/sessions/:id/step_out` | Continue until current method returns |
 
 ### `GET /tailscope/api/debugger/poll`
 
-Poll for active debug sessions. Used by the dashboard for real-time updates.
-
-**Response:**
+Poll for active debug sessions.
 
 ```json
 {
@@ -512,13 +473,11 @@ Poll for active debug sessions. Used by the dashboard for real-time updates.
 
 Browse source files and directories.
 
-**Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| `path` | string | Optional. Absolute or relative path (resolved against `source_root`). Defaults to `source_root`. |
 
-| Name | Type | Description |
-|------|------|-------------|
-| `path` | string | Optional. Absolute or relative path (resolved against `source_root`). Defaults to `source_root` |
-
-**Response (directory):**
+**Directory response:**
 
 ```json
 {
@@ -529,7 +488,7 @@ Browse source files and directories.
 }
 ```
 
-**Response (file):**
+**File response:**
 
 ```json
 {
