@@ -2,13 +2,9 @@ import React from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../api'
 import SeverityBadge from '../components/SeverityBadge'
-import SuggestedFix from '../components/SuggestedFix'
-import SqlBlock from '../components/SqlBlock'
 import TimeAgo from '../components/TimeAgo'
 import Drawer from '../components/Drawer'
-import SourceViewer from '../components/SourceViewer'
-import OpenInEditor from '../components/OpenInEditor'
-import OpenInDebugger from '../components/OpenInDebugger'
+import IssueDrawer from '../drawers/IssueDrawer'
 
 const typeBadges = {
   n_plus_one: { label: 'N+1', cls: 'bg-purple-100 text-purple-800' },
@@ -17,19 +13,13 @@ const typeBadges = {
   code_smell: { label: 'Code Smell', cls: 'bg-orange-100 text-orange-800' },
 }
 
-const borderColors = {
-  critical: 'border-red-500',
-  warning: 'border-yellow-500',
-  info: 'border-blue-400',
-}
-
 export default function Issues() {
   const [searchParams, setSearchParams] = useSearchParams()
   const tab = searchParams.get('tab') || 'active'
   const filter = searchParams.get('severity')
   const [data, setData] = React.useState(null)
   const [loading, setLoading] = React.useState(true)
-  const [sourceDrawer, setSourceDrawer] = React.useState(null)
+  const [selectedIssue, setSelectedIssue] = React.useState(null)
 
   const loadData = React.useCallback(() => {
     setLoading(true)
@@ -43,11 +33,13 @@ export default function Issues() {
 
   const handleIgnore = async (fp) => {
     await api.post(`/issues/${fp}/ignore`)
+    setSelectedIssue(null)
     loadData()
   }
 
   const handleUnignore = async (fp) => {
     await api.post(`/issues/${fp}/unignore`)
+    setSelectedIssue(null)
     loadData()
   }
 
@@ -106,9 +98,13 @@ export default function Issues() {
         </div>
       )}
 
-      <div className="space-y-4">
+      <div className="space-y-2">
         {issues.map((issue) => (
-          <div key={issue.fingerprint} className={`bg-white rounded-lg shadow p-4 border-l-4 ${borderColors[issue.severity] || 'border-gray-300'}`}>
+          <div
+            key={issue.fingerprint}
+            onClick={() => setSelectedIssue(issue)}
+            className="bg-white rounded-lg shadow p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+          >
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-2 flex-wrap">
                 <SeverityBadge severity={issue.severity} />
@@ -125,61 +121,31 @@ export default function Issues() {
               </div>
             </div>
 
-            <p className="text-sm text-gray-600 mt-2">{issue.description}</p>
+            <p className="text-sm text-gray-500 mt-1 line-clamp-1">{issue.description}</p>
 
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
-              {issue.metadata?.controller && (
-                <span className="font-mono text-sm font-semibold text-gray-800">{issue.metadata.controller}</span>
-              )}
+            <div className="mt-1.5 flex items-center gap-3 text-sm">
               {issue.source_file && (
-                <span className="inline-flex items-center gap-1">
-                  <button
-                    onClick={() => setSourceDrawer({ file: issue.source_file, line: issue.source_line })}
-                    className="text-blue-600 hover:underline font-mono text-sm"
-                  >
-                    {issue.source_file.replace(/.*\/app\//, 'app/')}:{issue.source_line}
-                  </button>
+                <span className="text-blue-600 font-mono text-xs">
+                  {issue.source_file.replace(/.*\/app\//, 'app/')}:{issue.source_line}
                 </span>
               )}
-              {issue.source_file && (
-                <span className="inline-flex items-center gap-1 ml-auto">
-                  <OpenInEditor file={issue.source_file} line={issue.source_line} />
-                  <OpenInDebugger file={issue.source_file} line={issue.source_line} />
+              {issue.latest_at && (
+                <span className="text-xs text-gray-400 ml-auto">
+                  <TimeAgo timestamp={issue.latest_at} />
                 </span>
-              )}
-            </div>
-
-            {issue.metadata?.sql_text && <div className="mt-2"><SqlBlock sql={issue.metadata.sql_text} maxLength={200} /></div>}
-
-            {issue.metadata?.backtrace?.length > 0 && (
-              <pre className="mt-2 bg-gray-100 p-2 rounded text-xs text-gray-600 overflow-x-auto">
-                <code>{issue.metadata.backtrace.slice(0, 3).join('\n')}</code>
-              </pre>
-            )}
-
-            <div className="mt-3 bg-emerald-50 border border-emerald-200 rounded p-3">
-              <div className="text-xs font-semibold text-emerald-700 uppercase mb-1.5">How to fix</div>
-              <SuggestedFix text={issue.suggested_fix} />
-            </div>
-
-            <div className="mt-3 flex items-center gap-3 text-sm">
-              {issue.latest_at && <span className="text-xs text-gray-400"><TimeAgo timestamp={issue.latest_at} /></span>}
-              {isIgnored ? (
-                <button onClick={() => handleUnignore(issue.fingerprint)} className="ml-auto px-2 py-1 text-xs rounded bg-gray-200 text-gray-600 hover:bg-gray-300">
-                  Unignore
-                </button>
-              ) : (
-                <button onClick={() => handleIgnore(issue.fingerprint)} className="ml-auto px-2 py-1 text-xs rounded bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600">
-                  Ignore
-                </button>
               )}
             </div>
           </div>
         ))}
       </div>
 
-      <Drawer isOpen={!!sourceDrawer} onClose={() => setSourceDrawer(null)} title="Source Code">
-        {sourceDrawer && <SourceViewer file={sourceDrawer.file} line={sourceDrawer.line} />}
+      <Drawer isOpen={!!selectedIssue} onClose={() => setSelectedIssue(null)} title={selectedIssue?.title || 'Issue'}>
+        <IssueDrawer
+          issue={selectedIssue}
+          isIgnored={isIgnored}
+          onIgnore={handleIgnore}
+          onUnignore={handleUnignore}
+        />
       </Drawer>
     </div>
   )

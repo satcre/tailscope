@@ -43,19 +43,14 @@ Aggregated issues with severity counts, filtering, SQL detail, and suggested fix
 
 ![Issues Dashboard](docs/screenshots/issues-dashboard.png)
 
-<!-- Add more screenshots as they become available:
 ### Queries
 ![Queries](docs/screenshots/queries.png)
 
 ### Requests
 ![Requests](docs/screenshots/requests.png)
 
-### Errors
-![Errors](docs/screenshots/errors.png)
-
 ### Debugger
 ![Debugger](docs/screenshots/debugger.png)
--->
 
 ## Documentation
 

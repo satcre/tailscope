@@ -33,6 +33,8 @@ The default landing page. Shows an aggregated view of all detected problems acro
 
 ### Queries
 
+![Queries](screenshots/queries.png)
+
 Lists individual slow SQL queries ordered by most recent.
 
 **Columns:**
@@ -52,6 +54,8 @@ Lists individual slow SQL queries ordered by most recent.
 - Request ID (links to associated request)
 
 ### Requests
+
+![Requests](screenshots/requests.png)
 
 Lists individual slow HTTP requests ordered by most recent.
 

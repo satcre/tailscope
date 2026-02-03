@@ -2,6 +2,8 @@
 
 Tailscope includes a browser-based debugger that lets you set breakpoints, pause execution, inspect variables, evaluate expressions, and step through Ruby code — all from the web dashboard.
 
+![Debugger](screenshots/debugger.png)
+
 ## Enabling the Debugger
 
 The debugger is disabled by default because it uses Ruby's `TracePoint` API, which adds overhead to every line of Ruby executed.
