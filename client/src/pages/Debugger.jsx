@@ -428,15 +428,21 @@ export default function Debugger() {
   }
 
   const toggleBreakpoint = async (file, line, isRemove, condition) => {
-    if (isRemove) {
-      const bp = data?.breakpoints.find((b) => b.file === file && b.line === line)
-      if (bp) await api.del(`/debugger/breakpoints/${bp.id}`)
-    } else {
-      await api.post('/debugger/breakpoints', { file, line, condition })
+    try {
+      if (isRemove) {
+        const bp = data?.breakpoints.find((b) => b.file === file && b.line === line)
+        if (bp) await api.del(`/debugger/breakpoints/${bp.id}`)
+      } else {
+        await api.post('/debugger/breakpoints', { file, line, condition })
+      }
+      await loadData()
+      await loadFileBpLines(file)
+      notifyBreakpointChange()
+    } catch (e) {
+      console.error('Breakpoint toggle failed:', e)
+      await loadData()
+      await loadFileBpLines(file)
     }
-    await loadData()
-    await loadFileBpLines(file)
-    notifyBreakpointChange()
   }
 
   const removeBreakpoint = async (id) => {

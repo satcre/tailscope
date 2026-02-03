@@ -4,7 +4,7 @@ module Tailscope
   class ApiController < ActionController::API
     include ActionController::RequestForgeryProtection
 
-    protect_from_forgery with: :exception
+    protect_from_forgery with: :null_session
 
     rescue_from StandardError do |e|
       render json: { error: e.message }, status: :internal_server_error
