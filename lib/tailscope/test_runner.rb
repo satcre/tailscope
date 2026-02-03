@@ -175,6 +175,16 @@ module Tailscope
         target = sanitize_target(target)
         return { examples: [] } unless target
 
+        # Cache results by file path + mtime to avoid re-spawning rspec
+        @dry_run_cache ||= {}
+        spec_file = target.split(":").first
+        full_path = Rails.root.join(spec_file).to_s
+        if File.exist?(full_path)
+          mtime = File.mtime(full_path).to_f
+          cache_key = "#{spec_file}:#{mtime}"
+          return @dry_run_cache[cache_key] if @dry_run_cache[cache_key]
+        end
+
         json_file = File.join(Dir.tmpdir, "tailscope_dryrun_#{SecureRandom.hex(4)}.json")
 
         cmd_parts = [
@@ -194,7 +204,7 @@ module Tailscope
           Process.wait(pid)
         end
 
-        if File.exist?(json_file)
+        result = if File.exist?(json_file)
           data = JSON.parse(File.read(json_file))
           File.delete(json_file) rescue nil
 
@@ -212,6 +222,9 @@ module Tailscope
         else
           { examples: [] }
         end
+
+        @dry_run_cache[cache_key] = result if cache_key
+        result
       rescue => e
         { examples: [], error: e.message }
       end
