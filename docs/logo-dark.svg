@@ -12,5 +12,5 @@
   <!-- Wordmark -->
   <text x="84" y="72" font-family="system-ui, -apple-system, sans-serif" font-size="48" font-weight="800" fill="#F9FAFB" letter-spacing="-1">tail<tspan fill="#EF4444">scope</tspan></text>
   <!-- Tail/signal wave (rendered after text so it appears in front) -->
-  <path d="M78 60 Q88 54 98 60 Q108 66 118 60 Q128 54 138 60 Q148 66 158 60 Q168 54 178 60" stroke="#EF4444" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M78 60 Q88 54 98 60 Q108 66 118 60 Q128 54 138 60 Q148 66 158 60" stroke="#EF4444" stroke-width="4" fill="none" stroke-linecap="round"/>
 </svg>
