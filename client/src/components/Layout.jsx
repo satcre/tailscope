@@ -16,8 +16,8 @@ function DebuggerIndicator() {
 
   React.useEffect(() => {
     load()
-    const interval = setInterval(load, 5000)
-    const onBreakpointChange = () => load()
+    const interval = setInterval(load, 2000)
+    const onBreakpointChange = () => { setTimeout(load, 300) }
     window.addEventListener('tailscope:breakpoints-changed', onBreakpointChange)
     return () => {
       clearInterval(interval)
