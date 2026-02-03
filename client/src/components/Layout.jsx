@@ -125,7 +125,19 @@ export default function Layout({ children }) {
     <div className="bg-gray-50 min-h-screen">
       <nav className="bg-gray-900 text-white">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-8">
-          <Link to="/" className="text-lg font-bold tracking-tight">Tailscope</Link>
+          <Link to="/" className="flex items-center gap-1.5">
+            <svg viewBox="0 0 440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-16" style={{ width: 'auto' }}>
+              <circle cx="50" cy="60" r="28" stroke="currentColor" strokeWidth="5"/>
+              <circle cx="50" cy="60" r="16" stroke="currentColor" strokeWidth="3"/>
+              <circle cx="50" cy="60" r="5" fill="#EF4444"/>
+              <line x1="50" y1="28" x2="50" y2="40" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
+              <line x1="50" y1="80" x2="50" y2="92" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
+              <line x1="18" y1="60" x2="30" y2="60" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
+              <line x1="70" y1="60" x2="82" y2="60" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
+              <path d="M82 60 Q95 40 108 60 Q121 80 134 60 Q147 40 160 60" stroke="#EF4444" strokeWidth="4" fill="none" strokeLinecap="round"/>
+              <text x="172" y="72" fontFamily="system-ui, -apple-system, sans-serif" fontSize="48" fontWeight="800" fill="currentColor" letterSpacing="-1">tail<tspan fill="#EF4444">scope</tspan></text>
+            </svg>
+          </Link>
           <div className="flex gap-4 text-sm flex-1 items-center">
             {navLinks.map(({ to, label, match, accent }) => {
               const active = match(location.pathname)
