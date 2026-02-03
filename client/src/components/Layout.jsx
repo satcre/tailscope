@@ -92,7 +92,7 @@ function DebuggerIndicator() {
                   <div key={bp.id} className="px-3 py-2 flex items-center gap-2 hover:bg-gray-50 border-b last:border-0">
                     <span className="text-red-500 text-xs shrink-0">●</span>
                     <button
-                      onClick={() => { navigate(`/debugger?file=${encodeURIComponent(bp.file)}`); setOpen(false) }}
+                      onClick={() => { navigate(`/debugger?file=${encodeURIComponent(bp.file)}&line=${bp.line}`); setOpen(false) }}
                       className="font-mono text-xs text-left hover:underline truncate flex-1"
                     >
                       {bp.file.replace(/.*\/app\//, 'app/')}:{bp.line}
