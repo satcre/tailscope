@@ -1,8 +1,10 @@
-# Tailscope
+<p align="center">
+  <img src="docs/logo.svg" alt="Tailscope" width="400">
+</p>
 
-Development profiler and debugger for Ruby on Rails. Captures slow queries, N+1 patterns, slow requests, runtime errors, and code smells — then presents them in a web dashboard with source-level detail, suggested fixes, and one-click editor integration.
+<p align="center">Development profiler and debugger for Ruby on Rails. Captures slow queries, N+1 patterns, slow requests, runtime errors, and code smells — then presents them in a web dashboard with source-level detail, suggested fixes, and one-click editor integration.</p>
 
- > [!CAUTION]
+> [!CAUTION]
 > **Early stage.** Tailscope is under active development and has not been battle-tested in production. APIs, configuration, and internal behavior may change. Use in development environments only.
 
 ## Features
