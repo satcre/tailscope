@@ -724,10 +724,11 @@ export default function Tests() {
     return () => clearInterval(pollingRef.current)
   }, [runStatus?.status])
 
-  // When a run finishes, fetch examples for files with results but no discovered examples
-  // and auto-expand those files so the full breakdown is visible
+  // When a run finishes, refresh coverage data and fetch examples
   React.useEffect(() => {
     if (!runStatus?.examples || runStatus.status === 'running') return
+    // Refresh coverage data after test run completes
+    api.get('/tests/coverage').then(setCoverageData).catch(() => {})
     const files = new Set()
     runStatus.examples.forEach((ex) => {
       const fp = ex.file_path?.replace('./', '')

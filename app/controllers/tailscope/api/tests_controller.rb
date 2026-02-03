@@ -28,7 +28,30 @@ module Tailscope
       end
 
       def coverage
-        render json: TestRunner.coverage
+        result = TestRunner.coverage
+
+        # Debug: include resultset keys and sample structure
+        if defined?(Rails)
+          resultset = Rails.root.join("coverage", ".resultset.json")
+          if File.exist?(resultset)
+            data = JSON.parse(File.read(resultset))
+            result[:debug_keys] = data.keys
+            first_key = data.keys.first
+            if first_key && data[first_key].is_a?(Hash)
+              result[:debug_entry_keys] = data[first_key].keys
+              cov = data[first_key]["coverage"]
+              if cov.is_a?(Hash) && cov.keys.first
+                sample_key = cov.keys.first
+                sample_val = cov[sample_key]
+                result[:debug_sample_file] = sample_key
+                result[:debug_sample_type] = sample_val.class.name
+                result[:debug_sample_keys] = sample_val.keys if sample_val.is_a?(Hash)
+              end
+            end
+          end
+        end
+
+        render json: result
       end
 
       def cancel
