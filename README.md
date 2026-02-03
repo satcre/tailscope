@@ -30,7 +30,7 @@
 Add to your Gemfile:
 
 ```ruby
-group :development do
+group :development, :test do
   gem "tailscope"
 end
 ```

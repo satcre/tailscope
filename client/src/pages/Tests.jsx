@@ -539,7 +539,7 @@ function FileResultGroup({ filePath, examples, onViewSource }) {
       </div>
       {showSource && (
         <div className="mt-1 mb-2">
-          <SourceViewer file={displayPath} line={1} />
+          <SourceViewer file={displayPath} line={1} full />
         </div>
       )}
       <div className="ml-2 mt-0.5">
@@ -785,7 +785,7 @@ export default function Tests() {
               <OpenInDebugger file={sourceDrawer.file} line={sourceDrawer.line} />
             </div>
             <div className="flex-1 overflow-y-auto">
-              <SourceViewer file={sourceDrawer.file} line={sourceDrawer.line} />
+              <SourceViewer file={sourceDrawer.file} line={sourceDrawer.line} full />
             </div>
           </div>
         )}

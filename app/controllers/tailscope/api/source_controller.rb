@@ -23,9 +23,16 @@ module Tailscope
         end
 
         lines = File.readlines(file)
-        radius = (params[:radius] || 50).to_i.clamp(10, 200)
-        start_line = [line - radius, 0].max
-        end_line = [line + radius, lines.size - 1].min
+
+        if params[:full].present?
+          start_line = 0
+          end_line = lines.size - 1
+        else
+          radius = (params[:radius] || 50).to_i.clamp(10, 200)
+          start_line = [line - radius, 0].max
+          end_line = [line + radius, lines.size - 1].min
+        end
+
         visible_lines = lines[start_line..end_line] || []
 
         render json: {

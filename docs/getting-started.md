@@ -10,7 +10,7 @@
 Add Tailscope to your Gemfile (development only):
 
 ```ruby
-group :development do
+group :development, :test do
   gem "tailscope"
 end
 ```

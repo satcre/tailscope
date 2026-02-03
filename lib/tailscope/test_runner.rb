@@ -122,7 +122,7 @@ module Tailscope
 
         Bundler.with_unbundled_env do
           pid = Process.spawn(
-            { "RAILS_ENV" => "test" },
+            { "RAILS_ENV" => "test", "DISABLE_SPRING" => "1" },
             *cmd_parts,
             chdir: Rails.root.to_s,
             out: File::NULL,
@@ -178,17 +178,18 @@ module Tailscope
         cmd_parts = [
           "bundle", "exec", "rspec",
           "--format", "json", "--out", json_file,
-          "--format", "progress", "--force-color"
+          "--format", "progress", "--force-color",
+          target || "spec"
         ]
-        cmd_parts << target if target
 
+        console_output = ""
         read_io, write_io = IO.pipe
 
         # Use unbundled_env so the child process gets a clean Bundler
         # environment and properly resolves the test group gems.
         Bundler.with_unbundled_env do
           pid = Process.spawn(
-            { "RAILS_ENV" => "test", "TERM" => "xterm-256color" },
+            { "RAILS_ENV" => "test", "DISABLE_SPRING" => "1", "TERM" => "xterm-256color" },
             *cmd_parts,
             chdir: Rails.root.to_s,
             out: write_io,
@@ -213,6 +214,16 @@ module Tailscope
         else
           # Fallback: try to parse JSON from combined output
           parse_results(console_output)
+        end
+
+        # If rspec reported 0 examples but console output contains errors,
+        # the spec files failed to load — surface the errors instead of
+        # showing a misleading "Passed — 0 examples".
+        if @current_run[:status] == "finished" &&
+            @current_run.dig(:summary, :total) == 0 &&
+            console_output.include?("An error occurred while loading")
+          @current_run[:status] = "error"
+          @current_run[:error_output] = console_output[0..5000]
         end
       end
 

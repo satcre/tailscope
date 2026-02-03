@@ -4,18 +4,19 @@ import { useHighlightedLines, HighlightedCode } from './HighlightedLine'
 import OpenInEditor from './OpenInEditor'
 import OpenInDebugger from './OpenInDebugger'
 
-export default function SourceViewer({ file, line }) {
+export default function SourceViewer({ file, line, full }) {
   const [source, setSource] = React.useState(null)
   const [loading, setLoading] = React.useState(true)
 
   React.useEffect(() => {
     if (!file || !line) return
     setLoading(true)
-    api.get(`/source?file=${encodeURIComponent(file)}&line=${line}`)
+    const fullParam = full ? '&full=1' : ''
+    api.get(`/source?file=${encodeURIComponent(file)}&line=${line}${fullParam}`)
       .then(setSource)
       .catch(() => setSource(null))
       .finally(() => setLoading(false))
-  }, [file, line])
+  }, [file, line, full])
 
   const highlightedLines = useHighlightedLines(source?.lines || [], file)
 
