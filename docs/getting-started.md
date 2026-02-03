@@ -71,12 +71,14 @@ Each issue includes:
 
 ## Navigation
 
-The dashboard has five pages accessible from the sidebar:
+The dashboard has seven pages accessible from the navigation bar:
 
 - **Issues** -- Aggregated view of all detected problems (default)
 - **Queries** -- Individual slow SQL queries with source locations
 - **Requests** -- Individual slow HTTP requests with controller/action detail
 - **Errors** -- Individual captured exceptions with backtraces
+- **Jobs** -- Background job executions with queue and duration detail
+- **Tests** -- Browser-based RSpec test runner with file tree and results
 - **Debugger** -- Interactive breakpoint debugger (requires separate opt-in)
 
 ## CLI Access

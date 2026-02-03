@@ -203,6 +203,145 @@ Get a single error record.
 
 Returns `404` if not found.
 
+## Tests
+
+### `GET /tailscope/api/tests/specs`
+
+Discover spec files in the project. Returns a tree structure of `spec/` directory.
+
+**Response:**
+
+```json
+{
+  "available": true,
+  "tree": [
+    {
+      "path": "spec/models",
+      "name": "models",
+      "type": "folder",
+      "category": "model",
+      "children": [
+        {
+          "path": "spec/models/user_spec.rb",
+          "name": "user_spec.rb",
+          "type": "file",
+          "category": "model"
+        }
+      ]
+    }
+  ]
+}
+```
+
+Returns `{ "available": false, "tree": [] }` if RSpec is not installed.
+
+### `POST /tailscope/api/tests/run`
+
+Start a spec run.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `target` | string | Optional. Spec file or directory path (e.g. `spec/models/user_spec.rb` or `spec/models/`). Omit to run all specs. Supports line targeting: `spec/models/user_spec.rb:15` |
+
+**Response:**
+
+```json
+{
+  "id": "a1b2c3d4e5f6",
+  "status": "running"
+}
+```
+
+Returns `409` with `{ "error": "Already running" }` if a run is in progress.
+
+### `GET /tailscope/api/tests/status`
+
+Get the status and results of the current or most recent spec run.
+
+**Response:**
+
+```json
+{
+  "run": {
+    "id": "a1b2c3d4e5f6",
+    "status": "finished",
+    "target": "all",
+    "started_at": "2024-01-15T14:23:01+00:00",
+    "summary": {
+      "total": 42,
+      "passed": 38,
+      "failed": 3,
+      "pending": 1,
+      "duration_s": 4.567
+    },
+    "examples": [
+      {
+        "id": "./spec/models/user_spec.rb[1:1:1]",
+        "description": "validates presence of name",
+        "full_description": "User validations validates presence of name",
+        "status": "passed",
+        "file_path": "./spec/models/user_spec.rb",
+        "line_number": 15,
+        "run_time": 0.0234,
+        "exception": null
+      }
+    ],
+    "console_output": "....(ANSI-encoded RSpec output)....",
+    "error_output": null
+  }
+}
+```
+
+Status values: `running`, `finished`, `error`, `cancelled`.
+
+Failed examples include an `exception` object:
+
+```json
+{
+  "exception": {
+    "class": "RSpec::Expectations::ExpectationNotMetError",
+    "message": "expected: true\n     got: false",
+    "backtrace": ["./spec/models/user_spec.rb:18:in `block (3 levels) in <top>'"]
+  }
+}
+```
+
+### `POST /tailscope/api/tests/cancel`
+
+Cancel a running spec execution.
+
+**Response:** `{ "status": "cancelled" }`
+
+Returns `409` with `{ "error": "No run in progress" }` if nothing is running.
+
+### `GET /tailscope/api/tests/examples`
+
+Dry-run to discover examples in a spec file without executing them. Uses `rspec --dry-run`.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| `target` | string | **Required.** Spec file path (e.g. `spec/models/user_spec.rb`) |
+
+**Response:**
+
+```json
+{
+  "examples": [
+    {
+      "id": "./spec/models/user_spec.rb[1:1:1]",
+      "description": "validates presence of name",
+      "full_description": "User validations validates presence of name",
+      "file_path": "./spec/models/user_spec.rb",
+      "line_number": 15
+    }
+  ]
+}
+```
+
 ## Source
 
 ### `GET /tailscope/api/source`
@@ -213,8 +352,9 @@ Get source code context around a specific line.
 
 | Name | Type | Description |
 |------|------|-------------|
-| `file` | string | **Required.** Absolute path to the file |
+| `file` | string | **Required.** Absolute or relative path (resolved against `source_root`) |
 | `line` | integer | **Required.** Line number to highlight |
+| `radius` | integer | Optional. Context lines above and below. Default: 50, range: 10–200 |
 
 **Response:**
 
@@ -292,7 +432,7 @@ Create a new breakpoint.
 
 | Name | Type | Description |
 |------|------|-------------|
-| `file` | string | **Required.** Absolute path to the file |
+| `file` | string | **Required.** Absolute or relative path (resolved against `source_root`) |
 | `line` | integer | **Required.** Line number |
 | `condition` | string | Optional. Ruby expression for conditional breakpoint |
 
@@ -376,7 +516,7 @@ Browse source files and directories.
 
 | Name | Type | Description |
 |------|------|-------------|
-| `path` | string | Optional. Path to browse. Defaults to `source_root` |
+| `path` | string | Optional. Absolute or relative path (resolved against `source_root`). Defaults to `source_root` |
 
 **Response (directory):**
 

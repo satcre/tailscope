@@ -25,6 +25,7 @@ RSpec.configure do |config|
     db.execute("DELETE FROM tailscope_queries")
     db.execute("DELETE FROM tailscope_requests")
     db.execute("DELETE FROM tailscope_errors")
+    db.execute("DELETE FROM tailscope_jobs")
     db.execute("DELETE FROM tailscope_breakpoints")
   end
 

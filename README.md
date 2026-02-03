@@ -20,6 +20,8 @@
 - **Code Smell Analysis** -- Static analysis detects missing validations, fat models/controllers, hardcoded secrets, and more
 - **Interactive Debugger** -- Set breakpoints, inspect variables, evaluate expressions, and step through code from the browser
 - **Open in Editor** -- One-click to open any source location in VS Code, Sublime Text, RubyMine, or Neovim
+- **Test Runner** -- Run RSpec specs from the browser with a file tree, nested describe/context grouping, colored console output, and one-click "open in editor" or "open in debugger"
+- **Job Monitoring** -- Tracks ActiveJob executions with queue name, duration, and trace detail
 - **CLI Tools** -- Terminal access to stats, queries, requests, errors, and live tail mode
 - **Zero Configuration** -- Works out of the box with sensible defaults; all thresholds are configurable
 
@@ -59,6 +61,15 @@ Aggregated issues with severity counts, filtering, SQL detail, and suggested fix
 ### Debugger
 ![Debugger](docs/screenshots/debugger.png)
 
+### Errors
+![Errors](docs/screenshots/errors.png)
+
+### Tests
+![Tests](docs/screenshots/tests.png)
+
+### Jobs
+![Jobs](docs/screenshots/jobs.png)
+
 ## Documentation
 
 | Guide | Description |
@@ -82,6 +93,7 @@ Tailscope installs as a Rails engine and Rack middleware. It subscribes to Activ
 Request → Middleware (timing + error capture)
        → SQL Subscriber (query recording)
        → Action Subscriber (request recording)
+       → Job Subscriber (job recording)
        → N+1 Detector (per-request analysis)
        → SQLite Storage (async background writer)
        → Web Dashboard / CLI (read)

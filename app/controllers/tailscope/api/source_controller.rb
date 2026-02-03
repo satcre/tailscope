@@ -12,6 +12,7 @@ module Tailscope
         unless file.start_with?("/")
           file = File.join(source_root, file)
         end
+        file = File.expand_path(file)
 
         unless file.start_with?(source_root)
           return render(json: { error: "Forbidden" }, status: :forbidden)

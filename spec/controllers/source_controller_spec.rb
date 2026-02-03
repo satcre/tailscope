@@ -22,8 +22,46 @@ RSpec.describe "Source API", type: :request do
       expect(body["lines"].any? { |l| l["current"] == true }).to be true
     end
 
+    it "resolves relative paths against source_root" do
+      get "/tailscope/api/source", params: { file: "config/routes.rb", line: 1 }
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body["file"]).to eq(valid_file)
+    end
+
+    it "uses default radius of 50" do
+      get "/tailscope/api/source", params: { file: valid_file, line: 3 }
+
+      body = JSON.parse(response.body)
+      # File is small, so all lines returned; radius controls the window
+      expect(body["lines"]).to be_an(Array)
+      expect(body["lines"].size).to be >= 1
+    end
+
+    it "accepts a custom radius parameter" do
+      get "/tailscope/api/source", params: { file: valid_file, line: 3, radius: 10 }
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body["lines"]).to be_an(Array)
+    end
+
+    it "clamps radius to minimum of 10" do
+      get "/tailscope/api/source", params: { file: valid_file, line: 3, radius: 1 }
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body["lines"]).to be_an(Array)
+    end
+
     it "returns 403 for path outside source_root" do
       get "/tailscope/api/source", params: { file: "/etc/passwd", line: 1 }
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "returns 403 for relative path traversal outside source_root" do
+      get "/tailscope/api/source", params: { file: "../../etc/passwd", line: 1 }
       expect(response).to have_http_status(:forbidden)
     end
 

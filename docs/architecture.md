@@ -84,7 +84,28 @@ Rack middleware inserted at position 0 (outermost) in the middleware stack.
 - Fires at the end of each controller action
 - Records slow requests to storage asynchronously
 
-Both subscribers check `Tailscope.enabled?` on every event and short-circuit when disabled.
+**Job Subscriber** (`lib/tailscope/subscribers/job_subscriber.rb`):
+- Attaches to `perform.active_job`
+- Fires after each ActiveJob execution
+- Records job class, queue, duration, and arguments
+
+All subscribers check `Tailscope.enabled?` on every event and short-circuit when disabled.
+
+### Test Runner
+
+**File:** `lib/tailscope/test_runner.rb`
+
+Provides browser-based RSpec test execution. Not a subscriber — invoked on-demand via the Tests API.
+
+**Capabilities:**
+- Discover spec files and build a folder/file tree
+- Run specs via `bundle exec rspec` with JSON output capture
+- Dry-run discovery (`rspec --dry-run`) to list examples without executing
+- Cancel a running spec execution
+- Parse RSpec JSON results into structured example data
+- Capture ANSI-colored console output for display
+
+**Execution:** Spawns `rspec` as a child process with `Process.spawn`, captures stdout/stderr via IO pipe, and writes JSON to a temp file for reliable parsing.
 
 ### N+1 Detector
 
@@ -208,7 +229,7 @@ Aggregates raw data into deduplicated, categorized issues. Called on-demand when
 - `client/src/main.jsx` — Entry point
 - `client/src/App.jsx` — Router definition
 - `client/src/api.js` — Fetch wrapper for API calls
-- `client/src/pages/` — Page components (Issues, Queries, Requests, Errors, Debugger)
+- `client/src/pages/` — Page components (Issues, Queries, Requests, Errors, Jobs, Tests, Debugger)
 - `client/src/components/` — Shared UI components
 - `client/src/drawers/` — Detail drawer components
 

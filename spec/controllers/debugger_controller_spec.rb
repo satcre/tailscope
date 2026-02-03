@@ -35,8 +35,22 @@ RSpec.describe "Debugger API", type: :request do
       expect(bps.first["file"]).to eq(valid_file)
     end
 
+    it "resolves relative paths against source_root" do
+      post "/tailscope/api/debugger/breakpoints", params: { file: "config/routes.rb", line: 3 }
+
+      expect(response).to have_http_status(:ok)
+      bps = Tailscope::Debugger::BreakpointManager.list_breakpoints
+      expect(bps.size).to eq(1)
+      expect(bps.first["file"]).to eq(valid_file)
+    end
+
     it "returns 403 for file outside source_root" do
       post "/tailscope/api/debugger/breakpoints", params: { file: "/etc/passwd", line: 1 }
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "returns 403 for relative path traversal outside source_root" do
+      post "/tailscope/api/debugger/breakpoints", params: { file: "../../etc/passwd", line: 1 }
       expect(response).to have_http_status(:forbidden)
     end
   end
@@ -90,8 +104,22 @@ RSpec.describe "Debugger API", type: :request do
       expect(body["lines"]).to be_an(Array)
     end
 
+    it "resolves relative paths against source_root" do
+      get "/tailscope/api/debugger/browse", params: { path: "config/routes.rb" }
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body["is_directory"]).to eq(false)
+      expect(body["path"]).to eq(valid_file)
+    end
+
     it "returns 403 for path outside source_root" do
       get "/tailscope/api/debugger/browse", params: { path: "/etc" }
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "returns 403 for relative path traversal outside source_root" do
+      get "/tailscope/api/debugger/browse", params: { path: "../../etc/passwd" }
       expect(response).to have_http_status(:forbidden)
     end
   end

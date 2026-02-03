@@ -161,6 +161,75 @@ RSpec.describe Tailscope::Storage do
     end
   end
 
+  describe ".record_job / .jobs" do
+    it "inserts and retrieves a job" do
+      described_class.record_job(
+        job_class: "SendEmailJob",
+        job_id: "job-abc-123",
+        queue_name: "default",
+        status: "performed",
+        duration_ms: 250.5,
+        source_file: "/app/jobs/send_email_job.rb",
+        source_line: 10,
+        request_id: "job_job-abc-123"
+      )
+
+      results = described_class.jobs(limit: 10)
+      expect(results.size).to eq(1)
+      expect(results.first["job_class"]).to eq("SendEmailJob")
+      expect(results.first["duration_ms"]).to eq(250.5)
+      expect(results.first["queue_name"]).to eq("default")
+      expect(results.first["status"]).to eq("performed")
+    end
+  end
+
+  describe ".jobs_count" do
+    it "returns correct count" do
+      described_class.record_job(job_class: "Job1", job_id: "j1", queue_name: "q", status: "performed", duration_ms: 10.0)
+      described_class.record_job(job_class: "Job2", job_id: "j2", queue_name: "q", status: "performed", duration_ms: 20.0)
+
+      expect(described_class.jobs_count).to eq(2)
+    end
+  end
+
+  describe ".find_job" do
+    it "finds a job by id" do
+      described_class.record_job(job_class: "TestJob", job_id: "j1", queue_name: "q", status: "performed", duration_ms: 10.0)
+      job = described_class.jobs.first
+      found = described_class.find_job(job["id"])
+      expect(found["job_class"]).to eq("TestJob")
+    end
+
+    it "returns nil for missing id" do
+      expect(described_class.find_job(99999)).to be_nil
+    end
+  end
+
+  describe ".queries_for_job" do
+    it "returns queries matching a job_id via tracking_id" do
+      described_class.record_query(sql_text: "SELECT 1", duration_ms: 10.0, request_id: "job_j1")
+      described_class.record_query(sql_text: "SELECT 2", duration_ms: 20.0, request_id: "job_j1")
+      described_class.record_query(sql_text: "SELECT 3", duration_ms: 30.0, request_id: "other")
+
+      results = described_class.queries_for_job("j1")
+      expect(results.size).to eq(2)
+    end
+
+    it "returns empty array for nil job_id" do
+      expect(described_class.queries_for_job(nil)).to eq([])
+    end
+  end
+
+  describe ".delete_all_jobs" do
+    it "removes all jobs" do
+      described_class.record_job(job_class: "Job1", job_id: "j1", queue_name: "q", status: "performed", duration_ms: 10.0)
+      described_class.record_job(job_class: "Job2", job_id: "j2", queue_name: "q", status: "performed", duration_ms: 20.0)
+
+      described_class.delete_all_jobs
+      expect(described_class.jobs_count).to eq(0)
+    end
+  end
+
   describe ".purge!" do
     it "removes old records" do
       described_class.record_query(sql_text: "old query", duration_ms: 50.0)

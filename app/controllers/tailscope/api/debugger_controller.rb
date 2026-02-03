@@ -20,6 +20,7 @@ module Tailscope
         line = params[:line].to_i
         source_root = Tailscope.configuration.source_root
         file = File.join(source_root, file) unless file.start_with?("/")
+        file = File.expand_path(file)
 
         unless file.start_with?(source_root)
           return render(json: { error: "Forbidden" }, status: :forbidden)
@@ -104,6 +105,7 @@ module Tailscope
         path = params[:path].to_s
         path = source_root if path.empty?
         path = File.join(source_root, path) unless path.start_with?("/")
+        path = File.expand_path(path)
 
         unless path.start_with?(source_root)
           return render(json: { error: "Forbidden" }, status: :forbidden)

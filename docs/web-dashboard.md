@@ -8,6 +8,8 @@ Visit `http://localhost:3000/tailscope` (or wherever your Rails app runs). The d
 
 ## Pages
 
+Navigation headings for **Queries** and **Errors** display live item counts.
+
 ### Issues
 
 The default landing page. Shows an aggregated view of all detected problems across all categories.
@@ -105,13 +107,61 @@ Interactive breakpoint debugger. Requires `config.debugger_enabled = true`.
 
 See [Debugger](debugger.md) for detailed usage.
 
+### Tests
+
+Browser-based RSpec test runner.
+
+![Tests](screenshots/tests.png)
+
+**Spec file tree:**
+- Folder and file hierarchy mirroring your `spec/` directory
+- Category badges (MODEL, CTRL, JOB, etc.) on each spec file
+- Expand a file to see its describe/context/it groups as a nested tree
+- Dry-run discovery: expanding a file fetches examples via `rspec --dry-run` without executing them
+
+**Running specs:**
+- **Run All** button to run the entire suite
+- Play button on any folder, file, context group, or individual example
+- Pass/fail dot indicators at every level (file, group, example)
+- Auto-expand files with results after a run completes
+
+**Results drawer:**
+- **Results tab** — hierarchical pass/fail breakdown per file, with describe/context nesting
+- **Console tab** — full RSpec output with ANSI color rendering (green dots, red F, colored diffs)
+- Summary bar: total, passed, failed, pending counts and duration
+
+**Integration:**
+- View Source button (`</>`) opens a side drawer showing the file at the exact line
+- Open in Editor button from the drawer to jump to your editor
+- Open in Debugger button to set a breakpoint at that line
+
+**Persistence:**
+- Expanded/collapsed folder and file state persists across page reloads via LocalStorage
+
+### Jobs
+
+![Jobs](screenshots/jobs.png)
+
+Monitors background job executions captured via the ActiveJob subscriber.
+
+**Columns:**
+- Job class name
+- Queue name
+- Duration
+- Timestamp
+
+**Detail drawer:** Click any job to see:
+- Job class, queue, and arguments
+- Duration and timestamps
+- Trace information and associated queries
+
 ## Source Code Viewer
 
-Available throughout the dashboard wherever a source location is shown. Displays the file content with:
+Available throughout the dashboard wherever a source location is shown. Opens as a side drawer displaying:
 - Line numbers
 - Highlighted current line
-- Surrounding context (15 lines above and below)
-- Syntax awareness (Ruby code formatting)
+- Surrounding context (50 lines above and below by default, configurable via `radius` parameter)
+- Syntax-highlighted Ruby code
 
 ## Open in Editor
 
@@ -119,4 +169,4 @@ A button appears next to every source location. Clicking it opens the file at th
 
 ## Pagination
 
-All list pages (Queries, Requests, Errors) are paginated with 25 items per page. Navigation controls appear at the bottom of each list.
+All list pages (Queries, Requests, Errors, Jobs) are paginated with 25 items per page. Navigation controls appear at the bottom of each list.
