@@ -16,6 +16,43 @@ module Tailscope
         issues
       end
 
+      def analyze_file(file_path)
+        file_path = File.expand_path(file_path)
+        return [] unless File.exist?(file_path)
+        return [] unless file_path.end_with?(".rb")
+
+        content = File.read(file_path)
+        lines = content.lines
+        issues = []
+
+        # Model-specific detectors
+        if file_path.include?("/app/models/")
+          issues.concat(detect_missing_validations(file_path, content, lines))
+          issues.concat(detect_fat_model(file_path, content, lines))
+          issues.concat(detect_callback_abuse(file_path, content, lines))
+        end
+
+        # Controller-specific detectors
+        if file_path.include?("/app/controllers/")
+          issues.concat(detect_missing_authentication(file_path, content, lines))
+          issues.concat(detect_unsafe_params(file_path, content, lines))
+          issues.concat(detect_data_exposure(file_path, content, lines))
+          issues.concat(detect_direct_sql(file_path, content, lines))
+          issues.concat(detect_fat_controller_actions(file_path, content, lines))
+          issues.concat(detect_multiple_responsibilities(file_path, content, lines))
+        end
+
+        # General detectors (all Ruby files)
+        issues.concat(detect_long_methods(file_path, lines))
+        issues.concat(detect_long_class(file_path, lines))
+        issues.concat(detect_todo_comments(file_path, lines))
+        issues.concat(detect_hardcoded_secrets(file_path, lines))
+        issues.concat(detect_empty_rescue(file_path, lines))
+        issues.concat(detect_demeter_violations(file_path, lines))
+
+        issues
+      end
+
       private
 
       def analyze_models(root)

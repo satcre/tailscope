@@ -103,7 +103,7 @@ module Tailscope
           created_at TEXT NOT NULL DEFAULT (datetime('now'))
         )
       SQL
-      tailscope_coverage: <<~SQL
+      tailscope_coverage: <<~SQL,
         CREATE TABLE IF NOT EXISTS tailscope_coverage (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           run_id TEXT NOT NULL,
@@ -112,6 +112,17 @@ module Tailscope
           covered_lines INTEGER,
           files_json TEXT,
           recorded_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+      SQL
+      tailscope_file_analysis: <<~SQL
+        CREATE TABLE IF NOT EXISTS tailscope_file_analysis (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          file_path TEXT NOT NULL UNIQUE,
+          analyzed_at TEXT NOT NULL,
+          file_mtime TEXT,
+          issues_json TEXT NOT NULL,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          updated_at TEXT NOT NULL DEFAULT (datetime('now'))
         )
       SQL
     }.freeze
@@ -130,6 +141,7 @@ module Tailscope
       "CREATE INDEX IF NOT EXISTS idx_jobs_recorded_at ON tailscope_jobs(recorded_at)",
       "CREATE INDEX IF NOT EXISTS idx_jobs_job_class ON tailscope_jobs(job_class)",
       "CREATE INDEX IF NOT EXISTS idx_ignored_fingerprint ON tailscope_ignored_issues(fingerprint)",
+      "CREATE INDEX IF NOT EXISTS idx_file_analysis_path ON tailscope_file_analysis(file_path)",
     ].freeze
 
     MIGRATIONS = [

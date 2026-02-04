@@ -141,7 +141,93 @@ module Tailscope
         end
       end
 
+      def analyze_file
+        file_path = params[:file_path].to_s
+        force = params[:force] == true || params[:force] == "true"
+
+        # Security: Validate path
+        source_root = Tailscope.configuration.source_root
+        file_path = File.join(source_root, file_path) unless file_path.start_with?("/")
+        file_path = File.expand_path(file_path)
+
+        unless file_path.start_with?(source_root)
+          return render(json: { error: "Forbidden" }, status: :forbidden)
+        end
+
+        unless File.exist?(file_path)
+          return render(json: { error: "File not found" }, status: :not_found)
+        end
+
+        unless file_path.end_with?(".rb")
+          return render(json: { error: "Only Ruby files can be analyzed" }, status: :unprocessable_entity)
+        end
+
+        # Check cache unless force refresh
+        unless force
+          cached = Storage.get_file_analysis(file_path)
+          if cached
+            return render json: {
+              cached: true,
+              analyzed_at: cached["analyzed_at"],
+              issues: JSON.parse(cached["issues_json"])
+            }
+          end
+        end
+
+        # Clear cache if force refresh
+        Storage.delete_file_analysis(file_path) if force
+
+        # Run analysis
+        issues = CodeAnalyzer.analyze_file(file_path)
+
+        # Cache results
+        Storage.store_file_analysis(file_path: file_path, issues: issues)
+
+        render json: {
+          cached: false,
+          analyzed_at: Time.now.utc.iso8601,
+          issues: issues.map { |i| serialize_issue(i) }
+        }
+      end
+
+      def file_analysis_status
+        file_path = params[:file_path].to_s
+        source_root = Tailscope.configuration.source_root
+        file_path = File.join(source_root, file_path) unless file_path.start_with?("/")
+        file_path = File.expand_path(file_path)
+
+        unless file_path.start_with?(source_root)
+          return render(json: { error: "Forbidden" }, status: :forbidden)
+        end
+
+        cached = Storage.get_file_analysis(file_path)
+
+        if cached
+          render json: {
+            cached: true,
+            analyzed_at: cached["analyzed_at"],
+            issue_count: JSON.parse(cached["issues_json"]).length
+          }
+        else
+          render json: { cached: false }
+        end
+      end
+
       private
+
+      def serialize_issue(issue)
+        {
+          fingerprint: issue.fingerprint,
+          title: issue.title,
+          description: issue.description,
+          severity: issue.severity,
+          type: issue.type,
+          source_file: issue.source_file,
+          source_line: issue.source_line,
+          suggested_fix: issue.suggested_fix,
+          metadata: issue.metadata,
+        }
+      end
 
       def session_summary(session)
         {

@@ -249,6 +249,38 @@ module Tailscope
         )
       end
 
+      # --- File Analysis ---
+
+      def store_file_analysis(file_path:, issues:)
+        file_path = File.expand_path(file_path)
+        file_mtime = File.exist?(file_path) ? File.mtime(file_path).utc.iso8601 : nil
+        issues_json = JSON.dump(issues.map { |i| serialize_issue_for_cache(i) })
+
+        Tailscope::Database.connection.execute(
+          "INSERT OR REPLACE INTO tailscope_file_analysis
+           (file_path, analyzed_at, file_mtime, issues_json, updated_at)
+           VALUES (?, datetime('now'), ?, ?, datetime('now'))",
+          [file_path, file_mtime, issues_json]
+        )
+      end
+
+      def get_file_analysis(file_path)
+        file_path = File.expand_path(file_path)
+        results = Tailscope::Database.connection.execute(
+          "SELECT * FROM tailscope_file_analysis WHERE file_path = ?",
+          [file_path]
+        )
+        results.first
+      end
+
+      def delete_file_analysis(file_path)
+        file_path = File.expand_path(file_path)
+        Tailscope::Database.connection.execute(
+          "DELETE FROM tailscope_file_analysis WHERE file_path = ?",
+          [file_path]
+        )
+      end
+
       def recent_events(limit: 10)
         db = Tailscope::Database.connection
         queries = db.execute(
@@ -264,6 +296,20 @@ module Tailscope
       end
 
       private
+
+      def serialize_issue_for_cache(issue)
+        {
+          fingerprint: issue.fingerprint,
+          title: issue.title,
+          description: issue.description,
+          severity: issue.severity,
+          type: issue.type,
+          source_file: issue.source_file,
+          source_line: issue.source_line,
+          suggested_fix: issue.suggested_fix,
+          metadata: issue.metadata,
+        }
+      end
 
       def enqueue(operation)
         if @queue

@@ -38,6 +38,8 @@ Tailscope::Engine.routes.draw do
     post "debugger/sessions/:id/step_out", to: "debugger#step_out", as: :debugger_step_out
     get "debugger/poll", to: "debugger#poll", as: :debugger_poll
     get "debugger/browse", to: "debugger#browse", as: :debugger_browse
+    post "debugger/analyze_file", to: "debugger#analyze_file", as: :debugger_analyze_file
+    get "debugger/file_analysis_status", to: "debugger#file_analysis_status", as: :debugger_file_analysis_status
   end
 
   # SPA catch-all

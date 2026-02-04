@@ -4,6 +4,7 @@ import { api } from '../api'
 import { useHighlightedLines, HighlightedCode } from '../components/HighlightedLine'
 import Drawer from '../components/Drawer'
 import DebuggerSessionDrawer from '../drawers/DebuggerSessionDrawer'
+import CodeAnalysisDrawer from '../drawers/CodeAnalysisDrawer'
 import OpenInEditor from '../components/OpenInEditor'
 import OpenInDebugger from '../components/OpenInDebugger'
 
@@ -125,7 +126,7 @@ function FileTree({ onSelectFile, currentFile, breakpoints }) {
   )
 }
 
-function CodeViewer({ filePath, breakpointLines, onToggleBreakpoint, activeSessions, scrollToLine }) {
+function CodeViewer({ filePath, breakpointLines, onToggleBreakpoint, activeSessions, scrollToLine, onAnalyze, analysisLoading, analysisCached }) {
   const [fileData, setFileData] = React.useState(null)
   const [loading, setLoading] = React.useState(false)
   const [conditionLine, setConditionLine] = React.useState(null)
@@ -193,9 +194,18 @@ function CodeViewer({ filePath, breakpointLines, onToggleBreakpoint, activeSessi
 
   return (
     <div className="flex flex-col h-full">
-      <div className="text-xs text-gray-500 px-3 py-2 border-b bg-gray-50 font-mono shrink-0 flex items-center gap-1">
+      <div className="text-xs text-gray-500 px-3 py-2 border-b bg-gray-50 font-mono shrink-0 flex items-center gap-2">
         <span className="truncate flex-1">{shortPath}</span>
-        <span className="inline-flex items-center gap-1 shrink-0">
+        <span className="inline-flex items-center gap-2 shrink-0">
+          {fileData.path.endsWith('.rb') && (
+            <button
+              onClick={() => onAnalyze(fileData.path)}
+              disabled={analysisLoading}
+              className="px-2 py-1 text-xs rounded border border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+            >
+              {analysisLoading ? 'Analyzing...' : (analysisCached ? 'Re-analyze' : 'Analyze')}
+            </button>
+          )}
           <OpenInEditor file={fileData.path} line={1} />
         </span>
       </div>
@@ -344,6 +354,10 @@ export default function Debugger() {
   const [selectedSession, setSelectedSession] = React.useState(null)
   const [scrollToLine, setScrollToLine] = React.useState(null)
   const didHandleParams = React.useRef(false)
+  const [analysisDrawerOpen, setAnalysisDrawerOpen] = React.useState(false)
+  const [analysisResults, setAnalysisResults] = React.useState(null)
+  const [analysisLoading, setAnalysisLoading] = React.useState(false)
+  const [analysisCached, setAnalysisCached] = React.useState(false)
 
   React.useEffect(() => {
     localStorage.setItem(LS_TABS_KEY, JSON.stringify(openTabs))
@@ -378,10 +392,22 @@ export default function Debugger() {
     if (activeTab) loadFileBpLines(activeTab)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const selectFile = React.useCallback((filePath) => {
+  const selectFile = React.useCallback(async (filePath) => {
     setOpenTabs((prev) => prev.includes(filePath) ? prev : [...prev, filePath])
     setActiveTab(filePath)
     loadFileBpLines(filePath)
+
+    // Check if analysis is cached for Ruby files
+    if (filePath.endsWith('.rb')) {
+      try {
+        const status = await api.get(`/debugger/file_analysis_status?file_path=${encodeURIComponent(filePath)}`)
+        setAnalysisCached(status.cached || false)
+      } catch {
+        setAnalysisCached(false)
+      }
+    } else {
+      setAnalysisCached(false)
+    }
   }, [loadFileBpLines])
 
   // Handle ?file=...&line=... params (from "Open in debugger" buttons)
@@ -422,6 +448,37 @@ export default function Debugger() {
     setScrollToLine(null)
     loadFileBpLines(filePath)
   }, [loadFileBpLines])
+
+  const handleAnalyzeFile = async (filePath) => {
+    if (!filePath) return
+    setAnalysisLoading(true)
+    try {
+      const data = await api.post('/debugger/analyze_file', {
+        file_path: filePath,
+        force: analysisCached
+      })
+      setAnalysisResults({
+        filePath: filePath,
+        issues: data.issues || [],
+        analyzedAt: data.analyzed_at,
+        cached: data.cached
+      })
+      setAnalysisCached(true)
+      setAnalysisDrawerOpen(true)
+    } catch (e) {
+      console.error('Analysis failed:', e)
+      alert('Failed to analyze file')
+    } finally {
+      setAnalysisLoading(false)
+    }
+  }
+
+  const handleReanalyze = () => {
+    if (analysisResults?.filePath) {
+      setAnalysisCached(false)
+      handleAnalyzeFile(analysisResults.filePath)
+    }
+  }
 
   const notifyBreakpointChange = () => {
     window.dispatchEvent(new CustomEvent('tailscope:breakpoints-changed'))
@@ -514,6 +571,9 @@ export default function Debugger() {
             onToggleBreakpoint={toggleBreakpoint}
             activeSessions={data.active_sessions}
             scrollToLine={scrollToLine}
+            onAnalyze={handleAnalyzeFile}
+            analysisLoading={analysisLoading}
+            analysisCached={analysisCached}
           />
         </div>
 
@@ -569,6 +629,23 @@ export default function Debugger() {
 
       <Drawer isOpen={!!selectedSession} onClose={() => setSelectedSession(null)} title={`Debug Session`} wide>
         {selectedSession && <DebuggerSessionDrawer sessionId={selectedSession} onSessionUpdate={loadData} />}
+      </Drawer>
+
+      <Drawer
+        isOpen={analysisDrawerOpen}
+        onClose={() => setAnalysisDrawerOpen(false)}
+        title="Code Analysis"
+        wide
+      >
+        {analysisResults && (
+          <CodeAnalysisDrawer
+            filePath={analysisResults.filePath}
+            issues={analysisResults.issues}
+            analyzedAt={analysisResults.analyzedAt}
+            onReanalyze={handleReanalyze}
+            isAnalyzing={analysisLoading}
+          />
+        )}
       </Drawer>
     </div>
   )
