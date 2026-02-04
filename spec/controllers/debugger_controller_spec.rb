@@ -123,4 +123,171 @@ RSpec.describe "Debugger API", type: :request do
       expect(response).to have_http_status(:forbidden)
     end
   end
+
+  describe "POST /tailscope/api/debugger/analyze_file" do
+    let(:ruby_file) { File.join(source_root, "app", "models", "user.rb") }
+
+    before do
+      FileUtils.mkdir_p(File.dirname(ruby_file))
+      File.write(ruby_file, "class User < ApplicationRecord\n  # TODO: add validations\nend\n")
+      # Clear analysis cache
+      Tailscope::Storage.delete_file_analysis(ruby_file)
+    end
+
+    after do
+      File.delete(ruby_file) if File.exist?(ruby_file)
+    end
+
+    it "analyzes a Ruby file and returns issues" do
+      post "/tailscope/api/debugger/analyze_file", params: { file_path: "app/models/user.rb" }
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body).to have_key("issues")
+      expect(body).to have_key("analyzed_at")
+      expect(body["cached"]).to eq(false)
+      expect(body["issues"]).to be_an(Array)
+    end
+
+    it "caches analysis results" do
+      post "/tailscope/api/debugger/analyze_file", params: { file_path: "app/models/user.rb" }
+
+      expect(response).to have_http_status(:ok)
+      first_body = JSON.parse(response.body)
+      expect(first_body["cached"]).to eq(false)
+      first_analyzed_at = first_body["analyzed_at"]
+
+      # Second request should return cached result
+      post "/tailscope/api/debugger/analyze_file", params: { file_path: "app/models/user.rb" }
+
+      expect(response).to have_http_status(:ok)
+      second_body = JSON.parse(response.body)
+      expect(second_body["cached"]).to eq(true)
+      expect(second_body["analyzed_at"]).not_to be_nil
+      # Both timestamps should be present (may have different formats but should be similar)
+      expect(second_body["analyzed_at"]).to match(/#{first_analyzed_at.split('T').first}/)
+    end
+
+    it "forces fresh analysis when force=true" do
+      post "/tailscope/api/debugger/analyze_file", params: { file_path: "app/models/user.rb" }
+      first_analyzed_at = JSON.parse(response.body)["analyzed_at"]
+
+      sleep(1.1) # Ensure time difference (need at least 1 second for timestamp)
+
+      post "/tailscope/api/debugger/analyze_file", params: { file_path: "app/models/user.rb", force: true }
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body["cached"]).to eq(false)
+      expect(body["analyzed_at"]).not_to eq(first_analyzed_at)
+    end
+
+    it "resolves relative paths against source_root" do
+      post "/tailscope/api/debugger/analyze_file", params: { file_path: "app/models/user.rb" }
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body["issues"]).to be_an(Array)
+    end
+
+    it "returns 403 for file outside source_root" do
+      post "/tailscope/api/debugger/analyze_file", params: { file_path: "/etc/passwd" }
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "returns 403 for relative path traversal outside source_root" do
+      post "/tailscope/api/debugger/analyze_file", params: { file_path: "../../etc/passwd" }
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "returns 404 for non-existent file" do
+      post "/tailscope/api/debugger/analyze_file", params: { file_path: "app/models/nonexistent.rb" }
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "returns 422 for non-Ruby file" do
+      text_file = File.join(source_root, "test.txt")
+      File.write(text_file, "not ruby")
+
+      post "/tailscope/api/debugger/analyze_file", params: { file_path: "test.txt" }
+      expect(response).to have_http_status(:unprocessable_entity)
+
+      File.delete(text_file) if File.exist?(text_file)
+    end
+
+    it "returns issues with all required fields" do
+      post "/tailscope/api/debugger/analyze_file", params: { file_path: "app/models/user.rb" }
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      issues = body["issues"]
+
+      if issues.any?
+        issue = issues.first
+        expect(issue).to have_key("fingerprint")
+        expect(issue).to have_key("title")
+        expect(issue).to have_key("description")
+        expect(issue).to have_key("severity")
+        expect(issue).to have_key("type")
+        expect(issue).to have_key("source_file")
+        expect(issue).to have_key("source_line")
+      end
+    end
+  end
+
+  describe "GET /tailscope/api/debugger/file_analysis_status" do
+    let(:ruby_file) { File.join(source_root, "app", "models", "user.rb") }
+
+    before do
+      FileUtils.mkdir_p(File.dirname(ruby_file))
+      File.write(ruby_file, "class User < ApplicationRecord\n  # TODO: add validations\nend\n")
+      # Clear analysis cache
+      Tailscope::Storage.delete_file_analysis(ruby_file)
+    end
+
+    after do
+      File.delete(ruby_file) if File.exist?(ruby_file)
+    end
+
+    it "returns cached status when file has been analyzed" do
+      post "/tailscope/api/debugger/analyze_file", params: { file_path: "app/models/user.rb" }
+
+      get "/tailscope/api/debugger/file_analysis_status", params: { file_path: "app/models/user.rb" }
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body["cached"]).to eq(true)
+      expect(body).to have_key("analyzed_at")
+      expect(body).to have_key("issue_count")
+      expect(body["issue_count"]).to be_a(Integer)
+    end
+
+    it "returns not cached status for unanalyzed file" do
+      get "/tailscope/api/debugger/file_analysis_status", params: { file_path: "app/models/user.rb" }
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body["cached"]).to eq(false)
+    end
+
+    it "resolves relative paths against source_root" do
+      post "/tailscope/api/debugger/analyze_file", params: { file_path: "app/models/user.rb" }
+
+      get "/tailscope/api/debugger/file_analysis_status", params: { file_path: "app/models/user.rb" }
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body["cached"]).to eq(true)
+    end
+
+    it "returns 403 for file outside source_root" do
+      get "/tailscope/api/debugger/file_analysis_status", params: { file_path: "/etc/passwd" }
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "returns 403 for relative path traversal outside source_root" do
+      get "/tailscope/api/debugger/file_analysis_status", params: { file_path: "../../etc/passwd" }
+      expect(response).to have_http_status(:forbidden)
+    end
+  end
 end

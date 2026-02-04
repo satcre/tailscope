@@ -241,4 +241,117 @@ RSpec.describe Tailscope::Storage do
       expect(described_class.queries.size).to eq(0)
     end
   end
+
+  describe "file analysis cache methods" do
+    let(:test_file) { "/tmp/test_file.rb" }
+    let(:sample_issues) do
+      [
+        Tailscope::Issue.new(
+          fingerprint: "abc123",
+          title: "Test Issue",
+          description: "Test description",
+          severity: :warning,
+          type: :code_smell,
+          raw_type: "code_smell",
+          source_file: test_file,
+          source_line: 10,
+          suggested_fix: "Fix it",
+          metadata: {},
+          occurrences: 1,
+          raw_ids: []
+        )
+      ]
+    end
+
+    before do
+      File.write(test_file, "# test file\nclass Test\nend\n")
+    end
+
+    after do
+      File.delete(test_file) if File.exist?(test_file)
+    end
+
+    describe ".store_file_analysis" do
+      it "stores file analysis results in cache" do
+        described_class.store_file_analysis(file_path: test_file, issues: sample_issues)
+
+        result = described_class.get_file_analysis(test_file)
+        expect(result).not_to be_nil
+        expect(result["file_path"]).to eq(test_file)
+        expect(result["issues_json"]).to be_a(String)
+      end
+
+      it "updates existing cache entry on duplicate file_path" do
+        described_class.store_file_analysis(file_path: test_file, issues: sample_issues)
+        described_class.store_file_analysis(file_path: test_file, issues: [])
+
+        result = described_class.get_file_analysis(test_file)
+        parsed = JSON.parse(result["issues_json"])
+        expect(parsed).to be_empty
+      end
+
+      it "stores file modification time" do
+        described_class.store_file_analysis(file_path: test_file, issues: sample_issues)
+
+        result = described_class.get_file_analysis(test_file)
+        expect(result["file_mtime"]).not_to be_nil
+      end
+
+      it "serializes issues as JSON" do
+        described_class.store_file_analysis(file_path: test_file, issues: sample_issues)
+
+        result = described_class.get_file_analysis(test_file)
+        parsed = JSON.parse(result["issues_json"])
+        expect(parsed).to be_an(Array)
+        expect(parsed.first["title"]).to eq("Test Issue")
+      end
+    end
+
+    describe ".get_file_analysis" do
+      it "retrieves cached file analysis" do
+        described_class.store_file_analysis(file_path: test_file, issues: sample_issues)
+
+        result = described_class.get_file_analysis(test_file)
+        expect(result).not_to be_nil
+        expect(result).to have_key("file_path")
+        expect(result).to have_key("analyzed_at")
+        expect(result).to have_key("issues_json")
+      end
+
+      it "returns nil for non-cached file" do
+        result = described_class.get_file_analysis("/nonexistent.rb")
+        expect(result).to be_nil
+      end
+
+      it "expands relative paths" do
+        described_class.store_file_analysis(file_path: test_file, issues: sample_issues)
+
+        result = described_class.get_file_analysis(test_file)
+        expect(result["file_path"]).to eq(File.expand_path(test_file))
+      end
+    end
+
+    describe ".delete_file_analysis" do
+      it "removes cached file analysis" do
+        described_class.store_file_analysis(file_path: test_file, issues: sample_issues)
+        expect(described_class.get_file_analysis(test_file)).not_to be_nil
+
+        described_class.delete_file_analysis(test_file)
+        expect(described_class.get_file_analysis(test_file)).to be_nil
+      end
+
+      it "does not error when deleting non-existent cache" do
+        expect {
+          described_class.delete_file_analysis("/nonexistent.rb")
+        }.not_to raise_error
+      end
+
+      it "expands relative paths before deletion" do
+        described_class.store_file_analysis(file_path: test_file, issues: sample_issues)
+
+        described_class.delete_file_analysis(test_file)
+        expect(described_class.get_file_analysis(test_file)).to be_nil
+      end
+    end
+  end
 end

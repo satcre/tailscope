@@ -21,6 +21,51 @@ RSpec.describe Tailscope::CodeAnalyzer do
     end
   end
 
+  describe ".analyze_file" do
+    let(:bad_model_path) { File.join(fixtures_root, "app", "models", "bad_model.rb") }
+    let(:good_model_path) { File.join(fixtures_root, "app", "models", "good_model.rb") }
+
+    it "returns an array of issues for a single file" do
+      issues = described_class.analyze_file(bad_model_path)
+      expect(issues).to be_an(Array)
+      issues.each do |issue|
+        expect(issue).to respond_to(:title)
+        expect(issue).to respond_to(:description)
+        expect(issue).to respond_to(:severity)
+        expect(issue).to respond_to(:source_file)
+        expect(issue).to respond_to(:source_line)
+      end
+    end
+
+    it "returns empty array for non-existent file" do
+      expect(described_class.analyze_file("/nonexistent.rb")).to eq([])
+    end
+
+    it "returns empty array for non-Ruby file" do
+      non_ruby = File.join(fixtures_root, "test.txt")
+      File.write(non_ruby, "not ruby")
+      expect(described_class.analyze_file(non_ruby)).to eq([])
+      File.delete(non_ruby) if File.exist?(non_ruby)
+    end
+
+    it "applies model-specific detectors to model files" do
+      issues = described_class.analyze_file(bad_model_path)
+      titles = issues.map(&:title)
+      expect(titles).to include("Missing Validations — BadModel")
+    end
+
+    it "applies general detectors to all Ruby files" do
+      issues = described_class.analyze_file(bad_model_path)
+      titles = issues.map(&:title)
+      expect(titles).to include("TODO Comment")
+    end
+
+    it "does not flag issues in clean files" do
+      issues = described_class.analyze_file(good_model_path)
+      expect(issues).to be_empty
+    end
+  end
+
   describe "model detectors" do
     context "with a model that has validations" do
       it "does not flag missing validations" do
@@ -149,6 +194,96 @@ RSpec.describe Tailscope::CodeAnalyzer do
         issue = issues.find { |i| i.title =~ /Demeter/ }
         expect(issue).not_to be_nil
         expect(issue.severity).to eq(:info)
+      end
+    end
+  end
+
+  describe "SOLID principle detectors" do
+    let(:solid_violations_path) { File.join(fixtures_root, "app", "models", "solid_violations.rb") }
+
+    context "with complex conditionals" do
+      it "flags multiple AND/OR operators" do
+        issues = described_class.analyze_file(solid_violations_path)
+        issue = issues.find { |i| i.title =~ /Complex Conditional/ }
+        expect(issue).not_to be_nil
+        expect(issue.severity).to eq(:warning)
+        expect(issue.description).to match(/AND\/OR/)
+      end
+    end
+
+    context "with deep nesting" do
+      it "flags 4+ indentation levels" do
+        issues = described_class.analyze_file(solid_violations_path)
+        issue = issues.find { |i| i.title =~ /Deep Nesting/ }
+        expect(issue).not_to be_nil
+        expect(issue.severity).to eq(:warning)
+        expect(issue.description).to match(/nested/)
+      end
+    end
+
+    context "with god object" do
+      it "flags classes with 7+ dependencies" do
+        issues = described_class.analyze_file(solid_violations_path)
+        issue = issues.find { |i| i.title =~ /God Object/ }
+        expect(issue).not_to be_nil
+        expect(issue.severity).to eq(:warning)
+        expect(issue.description).to match(/dependencies/)
+      end
+    end
+
+    context "with feature envy" do
+      it "flags methods using mostly external data" do
+        issues = described_class.analyze_file(solid_violations_path)
+        issue = issues.find { |i| i.title =~ /Feature Envy/ }
+        expect(issue).not_to be_nil
+        expect(issue.severity).to eq(:info)
+        expect(issue.description).to match(/other objects|another class/)
+      end
+    end
+
+    context "with boolean parameters" do
+      it "flags flag arguments" do
+        issues = described_class.analyze_file(solid_violations_path)
+        issue = issues.find { |i| i.title =~ /Boolean Parameter/ }
+        expect(issue).not_to be_nil
+        expect(issue.severity).to eq(:info)
+        expect(issue.description).to match(/boolean.*parameter/i)
+      end
+    end
+
+    context "with large parameter lists" do
+      it "flags methods with 4+ parameters" do
+        issues = described_class.analyze_file(solid_violations_path)
+        issue = issues.find { |i| i.title =~ /Long Parameter List/ }
+        expect(issue).not_to be_nil
+        expect(issue.severity).to eq(:warning)
+        expect(issue.description).to match(/parameters/)
+      end
+    end
+
+    context "with primitive obsession" do
+      it "flags large hash literals" do
+        issues = described_class.analyze_file(solid_violations_path)
+        issue = issues.find { |i| i.title =~ /Primitive Obsession/ && i.description =~ /hash/ }
+        expect(issue).not_to be_nil
+        expect(issue.severity).to eq(:info)
+      end
+
+      it "flags string validation patterns" do
+        issues = described_class.analyze_file(solid_violations_path)
+        issue = issues.find { |i| i.title =~ /Primitive Obsession/ && i.description =~ /email|phone/ }
+        expect(issue).not_to be_nil
+        expect(issue.severity).to eq(:info)
+      end
+    end
+
+    context "with explanatory comments" do
+      it "flags comments explaining what instead of why" do
+        issues = described_class.analyze_file(solid_violations_path)
+        issue = issues.find { |i| i.title =~ /Explanatory Comment/ }
+        expect(issue).not_to be_nil
+        expect(issue.severity).to eq(:info)
+        expect(issue.description).to match(/self-documenting/)
       end
     end
   end

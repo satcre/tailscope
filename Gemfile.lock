@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    tailscope (0.2.0)
+    tailscope (0.4.0)
       actionpack (>= 6.0)
       activesupport (>= 6.0)
       railties (>= 6.0)
