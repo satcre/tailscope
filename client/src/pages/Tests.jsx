@@ -512,6 +512,7 @@ function CoverageFileRow({ file, isOpen, onToggle }) {
 
 function ResultsDrawer({ runStatus, isRunning, onCancel, onViewSource }) {
   const [tab, setTab] = React.useState('results')
+  const [filter, setFilter] = React.useState('all')
   const consoleRef = React.useRef(null)
 
   // Auto-scroll console to bottom
@@ -523,8 +524,15 @@ function ResultsDrawer({ runStatus, isRunning, onCancel, onViewSource }) {
 
   if (!runStatus) return null
 
-  const examples = runStatus.examples || []
+  const allExamples = runStatus.examples || []
   const summary = runStatus.summary
+
+  // Apply filter
+  const examples = filter === 'failed'
+    ? allExamples.filter(ex => ex.status === 'failed')
+    : allExamples
+
+  const failedCount = allExamples.filter(ex => ex.status === 'failed').length
 
   // Group examples by file
   const byFile = {}
@@ -563,15 +571,29 @@ function ResultsDrawer({ runStatus, isRunning, onCancel, onViewSource }) {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-3 border-b border-gray-200">
-        <button
-          onClick={() => setTab('results')}
-          className={`px-3 py-1.5 text-sm font-medium border-b-2 -mb-px ${tab === 'results' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-        >Results {examples.length > 0 && `(${examples.length})`}</button>
-        <button
-          onClick={() => setTab('console')}
-          className={`px-3 py-1.5 text-sm font-medium border-b-2 -mb-px ${tab === 'console' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-        >Console</button>
+      <div className="flex items-center gap-3 mb-3 border-b border-gray-200">
+        <div className="flex gap-1">
+          <button
+            onClick={() => setTab('results')}
+            className={`px-3 py-1.5 text-sm font-medium border-b-2 -mb-px ${tab === 'results' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          >Results {examples.length > 0 && `(${examples.length})`}</button>
+          <button
+            onClick={() => setTab('console')}
+            className={`px-3 py-1.5 text-sm font-medium border-b-2 -mb-px ${tab === 'console' ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          >Console</button>
+        </div>
+        {tab === 'results' && !isRunning && failedCount > 0 && (
+          <div className="flex gap-1 ml-auto -mb-px">
+            <button
+              onClick={() => setFilter('all')}
+              className={`px-2.5 py-1 text-xs font-medium rounded ${filter === 'all' ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+            >All</button>
+            <button
+              onClick={() => setFilter('failed')}
+              className={`px-2.5 py-1 text-xs font-medium rounded ${filter === 'failed' ? 'bg-red-600 text-white' : 'bg-red-50 text-red-600 hover:bg-red-100'}`}
+            >Failed Only ({failedCount})</button>
+          </div>
+        )}
       </div>
 
       {/* Tab content */}

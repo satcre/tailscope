@@ -12,6 +12,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
+### Installation
+
+**Post-install message**: After `bundle install` or `bundle update tailscope`, Bundler displays a message (defined in `tailscope.gemspec`) reminding users to run the generator.
+
+When Tailscope is installed in a Rails app via `rails generate tailscope:install`, the generator:
+1. Creates initializer at `config/initializers/tailscope.rb`
+2. Mounts the engine at `/tailscope` in routes
+3. **Automatically runs `npm install` in the gem's client directory** to install frontend dependencies
+
+The install generator is at `lib/generators/tailscope/install_generator.rb`.
+
+**After updating the gem** with `bundle update tailscope`, re-run the generator to update frontend dependencies:
+```bash
+bundle update tailscope
+rails generate tailscope:install  # Post-install message reminds users
+```
+
+The generator is idempotent and safe to re-run.
+
 ### Running Tests
 
 ```bash
@@ -185,6 +204,31 @@ Use `Tailscope.configuration` to set thresholds:
 - `database_path`: SQLite DB location
 - `debugger_enabled`: Default false
 
+## Gem Packaging
+
+### Files Included in Gem
+
+The gemspec (`tailscope.gemspec`) includes:
+- `app/`, `config/`, `lib/`, `bin/` - Ruby code and Rails engine files
+- `public/` - Pre-built frontend assets (`app.js`, `app.css`)
+- `client/` - Frontend source code (React + Vite)
+  - **EXCLUDES** `client/node_modules/` from the gem package (installed at runtime)
+
+### .gitignore
+
+The `.gitignore` file excludes:
+- `client/node_modules/` and `client/package-lock.json`
+- Test coverage files (`coverage/`, `.resultset.json`)
+- SQLite databases (`*.sqlite3`)
+- Logs and temporary files
+- RSpec status file (`spec/examples.txt`)
+
+### Build Process
+
+1. **Development**: Run `cd client && npm run build` to rebuild frontend assets
+2. **Gem installation**: The install generator automatically runs `npm install` in the gem's `client/` directory
+3. **Pre-built assets**: The `public/tailscope/` directory contains compiled JS/CSS served by the Rails engine
+
 ## Important Guidelines
 
 ### Testing Rules
@@ -315,12 +359,12 @@ The test runner provides real-time feedback using non-blocking I/O:
 
 1. Spawns RSpec with `Process.spawn`, capturing stdout/stderr to a pipe
 2. Background thread reads from pipe using `read_nonblock(4096)` in a loop
-3. Each chunk is appended to `console_output` and stored in `@current_run[:console_output]`
+3. Each chunk is appended to `console_output` and stored in `@current_run[:console_output]` (no truncation - full output preserved)
 4. Frontend polls `/api/tests/status` to get incremental updates
 5. Main thread waits for process completion with `Process.wait(pid)`, then joins reader thread
 6. After completion, parses JSON output for structured data (summary, examples, failures)
 
-This approach avoids blocking on `IO.read` until completion, allowing dashboard to show test progress as it happens.
+This approach avoids blocking on `IO.read` until completion, allowing dashboard to show test progress as it happens. All output is preserved without character limits.
 
 ### Editor Integration
 

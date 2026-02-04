@@ -251,7 +251,7 @@ module Tailscope
             loop do
               chunk = read_io.read_nonblock(4096)
               console_output << chunk
-              @current_run[:console_output] = console_output[0..100_000]
+              @current_run[:console_output] = console_output
             rescue IO::WaitReadable
               IO.select([read_io], nil, nil, 0.1)
               retry
@@ -266,7 +266,7 @@ module Tailscope
         Process.wait(pid)
         reader_thread.join
 
-        @current_run[:console_output] = console_output[0..100_000]
+        @current_run[:console_output] = console_output
 
         if File.exist?(json_file)
           json_str = File.read(json_file)
@@ -284,7 +284,7 @@ module Tailscope
             @current_run.dig(:summary, :total) == 0 &&
             console_output.include?("An error occurred while loading")
           @current_run[:status] = "error"
-          @current_run[:error_output] = console_output[0..5000]
+          @current_run[:error_output] = console_output
         end
 
         # Capture coverage data immediately after the child process exits,
@@ -332,11 +332,11 @@ module Tailscope
           @current_run[:status] = "finished"
         else
           @current_run[:status] = "error"
-          @current_run[:error_output] = output.strip.empty? ? "No output from rspec" : output[0..2000]
+          @current_run[:error_output] = output.strip.empty? ? "No output from rspec" : output
         end
       rescue JSON::ParserError => e
         @current_run[:status] = "error"
-        @current_run[:error_output] = "Failed to parse rspec output: #{e.message}\n#{output[0..500]}"
+        @current_run[:error_output] = "Failed to parse rspec output: #{e.message}\n#{output}"
       end
 
       def store_coverage(console_output)

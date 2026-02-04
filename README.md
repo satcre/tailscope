@@ -44,6 +44,17 @@ rails generate tailscope:install
 
 Start your Rails server and visit **`/tailscope`** in your browser.
 
+## Updating
+
+To update Tailscope to the latest version:
+
+```bash
+bundle update tailscope
+rails generate tailscope:install
+```
+
+Re-running the generator updates frontend dependencies and is safe to do multiple times.
+
 ## Screenshots
 
 ### Issues Dashboard

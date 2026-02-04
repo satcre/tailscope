@@ -1,0 +1,39 @@
+# Dependencies
+client/node_modules/
+client/package-lock.json
+
+# Test coverage
+coverage/
+.resultset.json
+
+# SQLite databases
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-*
+
+# Logs
+log/*.log
+*.log
+spec/dummy/log/*.log
+
+# Temporary files
+tmp/
+.DS_Store
+*.swp
+*.swo
+*~
+
+# RSpec
+spec/examples.txt
+
+# Mutant
+.mutant-tempdir/
+
+# Bundler
+.bundle/
+vendor/bundle/
+
+# IDE
+.idea/
+.vscode/
+*.iml

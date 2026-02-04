@@ -13,7 +13,9 @@ Gem::Specification.new do |spec|
   spec.required_ruby_version = ">= 3.0"
 
   spec.files = Dir.chdir(__dir__) do
-    Dir["{app,config,lib,bin}/**/*", "LICENSE.txt", "README.md"]
+    Dir["{app,config,lib,bin,public,client}/**/*", "LICENSE.txt", "README.md"].reject do |f|
+      f.match?(%r{^client/node_modules/}) # Exclude node_modules from gem
+    end
   end
   spec.bindir = "bin"
   spec.executables = ["tailscope"]
@@ -27,4 +29,25 @@ Gem::Specification.new do |spec|
 
   spec.add_development_dependency "rspec-rails", "~> 6.0"
   spec.add_development_dependency "rake", "~> 13.0"
+
+  spec.post_install_message = <<~MSG
+
+    ╔═══════════════════════════════════════════════════════════════╗
+    ║                  Tailscope Installed! 🎉                      ║
+    ╚═══════════════════════════════════════════════════════════════╝
+
+    To complete setup, run:
+
+      rails generate tailscope:install
+
+    This will:
+      • Create config/initializers/tailscope.rb
+      • Mount the engine at /tailscope
+      • Install frontend dependencies
+
+    After updating with `bundle update tailscope`, re-run:
+
+      rails generate tailscope:install
+
+  MSG
 end
