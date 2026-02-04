@@ -19,13 +19,30 @@ module Tailscope
 
         ignored_count = all_issues.count { |i| ignored_fps.include?(i.fingerprint) }
 
+        # Pagination
+        page = [params[:page].to_i, 1].max
+        per_page = params[:per_page].to_i
+        per_page = 20 if per_page <= 0 # Default to 20
+        per_page = [per_page, 100].min # Cap at 100 per page
+
+        total_count = issues.count
+        total_pages = (total_count.to_f / per_page).ceil
+        offset = (page - 1) * per_page
+        paginated_issues = issues[offset, per_page] || []
+
         render json: {
-          issues: issues.map { |i| serialize_issue(i) },
+          issues: paginated_issues.map { |i| serialize_issue(i) },
           ignored_count: ignored_count,
           counts: {
             critical: issues.count { |i| i.severity == :critical },
             warning: issues.count { |i| i.severity == :warning },
             info: issues.count { |i| i.severity == :info },
+          },
+          pagination: {
+            page: page,
+            per_page: per_page,
+            total_count: total_count,
+            total_pages: total_pages,
           },
         }
       end

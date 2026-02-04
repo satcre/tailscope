@@ -165,6 +165,8 @@ All subscribers call `SourceLocator.locate(caller_locations)` to find the releva
 
 - **`CodeAnalyzer`**: Static analysis detects code smells (fat models, missing validations, hardcoded secrets, etc.)
 - **`IssueBuilder`**: Aggregates data into actionable issues with severity, fingerprints, and suggested fixes
+- **Code smells are generated on-demand**: They are NOT stored in the database - analyzed fresh from source code on every API call
+- **Rescan button**: Issues page includes a "Rescan Code" button to trigger fresh code smell analysis
 
 ## Testing Patterns
 

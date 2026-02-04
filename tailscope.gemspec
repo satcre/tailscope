@@ -5,10 +5,10 @@ require_relative "lib/tailscope/version"
 Gem::Specification.new do |spec|
   spec.name = "tailscope"
   spec.version = Tailscope::VERSION
-  spec.authors = ["Tailscope"]
+  spec.authors = ["Satchit S"]
   spec.summary = "Rails debugging & tracing: slow queries, N+1 detection, request timing, error capture, test runner, and job monitoring"
   spec.description = "A Rails engine and CLI that captures slow queries, N+1 patterns, slow requests, runtime errors, and background job executions. Includes a browser-based RSpec test runner. Provides a web dashboard and CLI for viewing issues with source-level detail."
-  spec.homepage = "https://github.com/tailscope/tailscope"
+  spec.homepage = "https://github.com/satcre/tailscope"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.0"
 

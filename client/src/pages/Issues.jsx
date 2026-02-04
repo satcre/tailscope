@@ -17,17 +17,28 @@ export default function Issues() {
   const [searchParams, setSearchParams] = useSearchParams()
   const tab = searchParams.get('tab') || 'active'
   const filter = searchParams.get('severity')
+  const page = parseInt(searchParams.get('page') || '1', 10)
   const [data, setData] = React.useState(null)
   const [loading, setLoading] = React.useState(true)
+  const [rescanning, setRescanning] = React.useState(false)
   const [selectedIssue, setSelectedIssue] = React.useState(null)
 
-  const loadData = React.useCallback(() => {
-    setLoading(true)
+  const loadData = React.useCallback((isRescan = false) => {
+    if (isRescan) {
+      setRescanning(true)
+    } else {
+      setLoading(true)
+    }
     const p = new URLSearchParams()
     if (tab === 'ignored') p.set('tab', 'ignored')
     if (filter) p.set('severity', filter)
-    api.get(`/issues?${p}`).then(setData).finally(() => setLoading(false))
-  }, [tab, filter])
+    p.set('page', page.toString())
+    p.set('per_page', '20')
+    api.get(`/issues?${p}`).then(setData).finally(() => {
+      setLoading(false)
+      setRescanning(false)
+    })
+  }, [tab, filter, page])
 
   React.useEffect(() => { loadData() }, [loadData])
 
@@ -43,16 +54,52 @@ export default function Issues() {
     loadData()
   }
 
+  const handleRescan = () => {
+    loadData(true)
+  }
+
+  const changePage = (newPage) => {
+    const params = {}
+    if (tab === 'ignored') params.tab = 'ignored'
+    if (filter) params.severity = filter
+    if (newPage > 1) params.page = newPage.toString()
+    setSearchParams(params)
+  }
+
   const isIgnored = tab === 'ignored'
 
   if (loading && !data) return <div className="text-gray-400">Loading...</div>
   if (!data) return <div className="text-red-400">Failed to load issues</div>
 
-  const { issues, counts, ignored_count } = data
+  const { issues, counts, ignored_count, pagination } = data
+  const { total_count = 0, total_pages = 0 } = pagination || {}
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Issues</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Issues</h1>
+        <button
+          onClick={handleRescan}
+          disabled={rescanning || loading}
+          className="px-4 py-2 text-sm rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        >
+          {rescanning ? (
+            <>
+              <svg className="w-4 h-4 animate-spin" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="8" cy="8" r="6" strokeDasharray="30" strokeDashoffset="10" strokeLinecap="round" />
+              </svg>
+              Rescanning...
+            </>
+          ) : (
+            <>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Rescan Code
+            </>
+          )}
+        </button>
+      </div>
 
       {!isIgnored && (
         <div className="grid grid-cols-3 gap-4 mb-6">
@@ -70,7 +117,7 @@ export default function Issues() {
           onClick={() => setSearchParams({})}
           className={`px-3 py-1 text-sm rounded ${!filter && !isIgnored ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700'}`}
         >
-          All ({issues.length})
+          All ({total_count})
         </button>
         {!isIgnored && ['critical', 'warning', 'info'].map((sev) => {
           const colors = { critical: 'bg-red-600', warning: 'bg-yellow-600', info: 'bg-blue-600' }
@@ -138,6 +185,50 @@ export default function Issues() {
           </div>
         ))}
       </div>
+
+      {total_pages > 1 && (
+        <div className="mt-6 flex items-center justify-between">
+          <div className="text-sm text-gray-500">
+            Showing {issues.length} of {total_count} issues
+          </div>
+          <div className="flex gap-1">
+            <button
+              onClick={() => changePage(page - 1)}
+              disabled={page === 1}
+              className="px-3 py-1 text-sm rounded bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            {Array.from({ length: Math.min(total_pages, 5) }, (_, i) => {
+              const pageNum = page <= 3 ? i + 1 : page + i - 2
+              if (pageNum > total_pages) return null
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => changePage(pageNum)}
+                  className={`px-3 py-1 text-sm rounded ${
+                    page === pageNum
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white border border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              )
+            })}
+            {total_pages > 5 && page < total_pages - 2 && (
+              <span className="px-3 py-1 text-sm text-gray-500">...</span>
+            )}
+            <button
+              onClick={() => changePage(page + 1)}
+              disabled={page === total_pages}
+              className="px-3 py-1 text-sm rounded bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       <Drawer isOpen={!!selectedIssue} onClose={() => setSelectedIssue(null)} title={selectedIssue?.title || 'Issue'}>
         <IssueDrawer
