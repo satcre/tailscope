@@ -100,12 +100,24 @@ module Tailscope
         { status: "cancelled" }
       end
 
-      def status
+      def status(filter: nil)
         return { run: nil } unless @current_run
 
         run = @current_run.dup
         run.delete(:pid)
+
+        # Apply filter if requested and examples are available
+        if filter == "failed" && run[:examples]
+          run[:examples] = run[:examples].select { |ex| ex[:status] == "failed" }
+        end
+
         { run: run }
+      end
+
+      def failed_examples
+        return [] unless @current_run && @current_run[:examples]
+
+        @current_run[:examples].select { |ex| ex[:status] == "failed" }
       end
 
       def coverage
@@ -233,10 +245,26 @@ module Tailscope
         @current_run[:pid] = pid
         write_io.close
 
-        console_output = read_io.read
-        read_io.close
+        # Stream output in real-time instead of blocking
+        reader_thread = Thread.new do
+          begin
+            loop do
+              chunk = read_io.read_nonblock(4096)
+              console_output << chunk
+              @current_run[:console_output] = console_output[0..100_000]
+            rescue IO::WaitReadable
+              IO.select([read_io], nil, nil, 0.1)
+              retry
+            rescue EOFError
+              break
+            end
+          ensure
+            read_io.close
+          end
+        end
 
         Process.wait(pid)
+        reader_thread.join
 
         @current_run[:console_output] = console_output[0..100_000]
 

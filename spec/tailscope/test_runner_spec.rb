@@ -96,6 +96,74 @@ RSpec.describe Tailscope::TestRunner do
       expect(result[:run][:id]).to eq("test-123")
       expect(result[:run]).not_to have_key(:pid)
     end
+
+    it "filters examples by status when filter parameter is provided" do
+      described_class.instance_variable_set(:@current_run, {
+        id: "test-123",
+        status: "finished",
+        pid: 12345,
+        examples: [
+          { id: "1", description: "passes", status: "passed" },
+          { id: "2", description: "fails", status: "failed" },
+          { id: "3", description: "another pass", status: "passed" },
+          { id: "4", description: "another fail", status: "failed" },
+        ],
+      })
+
+      result = described_class.status(filter: "failed")
+      expect(result[:run][:examples].size).to eq(2)
+      expect(result[:run][:examples].map { |e| e[:status] }).to all(eq("failed"))
+      expect(result[:run][:examples].map { |e| e[:id] }).to eq(["2", "4"])
+    end
+
+    it "returns all examples when no filter is provided" do
+      described_class.instance_variable_set(:@current_run, {
+        id: "test-123",
+        status: "finished",
+        examples: [
+          { id: "1", description: "passes", status: "passed" },
+          { id: "2", description: "fails", status: "failed" },
+        ],
+      })
+
+      result = described_class.status
+      expect(result[:run][:examples].size).to eq(2)
+    end
+  end
+
+  describe ".failed_examples" do
+    it "returns empty array when no run exists" do
+      result = described_class.failed_examples
+      expect(result).to eq([])
+    end
+
+    it "returns empty array when no examples exist" do
+      described_class.instance_variable_set(:@current_run, {
+        id: "test-123",
+        status: "finished",
+      })
+
+      result = described_class.failed_examples
+      expect(result).to eq([])
+    end
+
+    it "returns only failed examples" do
+      described_class.instance_variable_set(:@current_run, {
+        id: "test-123",
+        status: "finished",
+        examples: [
+          { id: "1", description: "passes", status: "passed" },
+          { id: "2", description: "fails", status: "failed" },
+          { id: "3", description: "pending", status: "pending" },
+          { id: "4", description: "another fail", status: "failed" },
+        ],
+      })
+
+      result = described_class.failed_examples
+      expect(result.size).to eq(2)
+      expect(result.map { |e| e[:id] }).to eq(["2", "4"])
+      expect(result.map { |e| e[:status] }).to all(eq("failed"))
+    end
   end
 
   describe "target sanitization" do

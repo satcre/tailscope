@@ -104,6 +104,53 @@ RSpec.describe "Tests API", type: :request do
       body = JSON.parse(response.body)
       expect(body["run"]).to be_nil
     end
+
+    it "passes filter parameter to TestRunner" do
+      allow(Tailscope::TestRunner).to receive(:status)
+        .with(filter: "failed")
+        .and_return({
+          run: {
+            id: "abc123",
+            status: "finished",
+            examples: [
+              { id: "1", status: "failed" },
+            ],
+          },
+        })
+
+      get "/tailscope/api/tests/status", params: { filter: "failed" }
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body["run"]["examples"].size).to eq(1)
+      expect(body["run"]["examples"].first["status"]).to eq("failed")
+    end
+  end
+
+  describe "GET /tailscope/api/tests/failed" do
+    it "returns failed examples" do
+      allow(Tailscope::TestRunner).to receive(:failed_examples).and_return([
+        { id: "1", description: "fails", status: "failed", file_path: "spec/models/user_spec.rb", line_number: 10 },
+        { id: "2", description: "another fail", status: "failed", file_path: "spec/models/post_spec.rb", line_number: 20 },
+      ])
+
+      get "/tailscope/api/tests/failed"
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body["examples"].size).to eq(2)
+      expect(body["examples"].map { |e| e["status"] }).to all(eq("failed"))
+    end
+
+    it "returns empty array when no failures" do
+      allow(Tailscope::TestRunner).to receive(:failed_examples).and_return([])
+
+      get "/tailscope/api/tests/failed"
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body["examples"]).to eq([])
+    end
   end
 
   describe "GET /tailscope/api/tests/examples" do

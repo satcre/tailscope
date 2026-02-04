@@ -19,6 +19,7 @@ Tailscope::Engine.routes.draw do
     get "tests/examples", to: "tests#examples", as: :tests_examples
     post "tests/run", to: "tests#run", as: :tests_run
     get "tests/status", to: "tests#status", as: :tests_status
+    get "tests/failed", to: "tests#failed", as: :tests_failed
     post "tests/cancel", to: "tests#cancel", as: :tests_cancel
     get "tests/coverage", to: "tests#coverage", as: :tests_coverage
 

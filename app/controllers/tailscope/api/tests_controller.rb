@@ -19,7 +19,12 @@ module Tailscope
       end
 
       def status
-        render json: TestRunner.status
+        filter = params[:filter]
+        render json: TestRunner.status(filter: filter)
+      end
+
+      def failed
+        render json: { examples: TestRunner.failed_examples }
       end
 
       def examples
