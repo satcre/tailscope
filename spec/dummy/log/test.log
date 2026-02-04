@@ -4385,3 +4385,45 @@ Completed 200 OK in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached
 Started POST "/tailscope/api/tests/cancel" for 127.0.0.1 at 2026-02-04 12:18:47 +0530
 Processing by Tailscope::Api::TestsController#cancel as HTML
 Completed 409 Conflict in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/tests/specs" for 127.0.0.1 at 2026-02-04 12:20:59 +0530
+Processing by Tailscope::Api::TestsController#specs as HTML
+Completed 200 OK in 4ms (Views: 0.2ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/tests/specs" for 127.0.0.1 at 2026-02-04 12:20:59 +0530
+Processing by Tailscope::Api::TestsController#specs as HTML
+Completed 200 OK in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/tests/run" for 127.0.0.1 at 2026-02-04 12:20:59 +0530
+Processing by Tailscope::Api::TestsController#run as HTML
+Completed 200 OK in 1ms (Views: 0.9ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.8ms)
+Started POST "/tailscope/api/tests/run" for 127.0.0.1 at 2026-02-04 12:20:59 +0530
+Processing by Tailscope::Api::TestsController#run as HTML
+  Parameters: {"target" => "spec/models/user_spec.rb"}
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.7ms)
+Started POST "/tailscope/api/tests/run" for 127.0.0.1 at 2026-02-04 12:20:59 +0530
+Processing by Tailscope::Api::TestsController#run as HTML
+Completed 409 Conflict in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.7ms)
+Started GET "/tailscope/api/tests/status" for 127.0.0.1 at 2026-02-04 12:20:59 +0530
+Processing by Tailscope::Api::TestsController#status as HTML
+Completed 200 OK in 2ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 1.2ms)
+Started GET "/tailscope/api/tests/status" for 127.0.0.1 at 2026-02-04 12:20:59 +0530
+Processing by Tailscope::Api::TestsController#status as HTML
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/tests/status?filter=failed" for 127.0.0.1 at 2026-02-04 12:20:59 +0530
+Processing by Tailscope::Api::TestsController#status as HTML
+  Parameters: {"filter" => "failed"}
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/tests/failed" for 127.0.0.1 at 2026-02-04 12:20:59 +0530
+Processing by Tailscope::Api::TestsController#failed as HTML
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/tests/failed" for 127.0.0.1 at 2026-02-04 12:20:59 +0530
+Processing by Tailscope::Api::TestsController#failed as HTML
+Completed 200 OK in 1ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started GET "/tailscope/api/tests/examples?target=spec%2Fmodels%2Fuser_spec.rb" for 127.0.0.1 at 2026-02-04 12:20:59 +0530
+Processing by Tailscope::Api::TestsController#examples as HTML
+  Parameters: {"target" => "spec/models/user_spec.rb"}
+Completed 200 OK in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/tests/cancel" for 127.0.0.1 at 2026-02-04 12:20:59 +0530
+Processing by Tailscope::Api::TestsController#cancel as HTML
+Completed 200 OK in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)
+Started POST "/tailscope/api/tests/cancel" for 127.0.0.1 at 2026-02-04 12:20:59 +0530
+Processing by Tailscope::Api::TestsController#cancel as HTML
+Completed 409 Conflict in 0ms (Views: 0.1ms | ActiveRecord: 0.0ms (0 queries, 0 cached) | GC: 0.0ms)

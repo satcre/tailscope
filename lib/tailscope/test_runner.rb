@@ -231,7 +231,7 @@ module Tailscope
           target || "spec"
         ]
 
-        console_output = ""
+        console_output = String.new
         read_io, write_io = IO.pipe
 
         pid = Process.spawn(
