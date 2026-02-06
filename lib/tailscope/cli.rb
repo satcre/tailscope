@@ -16,17 +16,19 @@ module Tailscope
         return
       end
 
-      puts format("%-6s %-10s %-60s %-30s", "ID", "Duration", "SQL", "Source")
-      puts "-" * 110
-      results.each do |q|
+      terminal_width = (ENV["COLUMNS"] || 120).to_i
+
+      results.each_with_index do |q, idx|
+        puts "" if idx > 0
         n1 = q["n_plus_one"] == 1 ? " [N+1 x#{q["n_plus_one_count"]}]" : ""
-        source = q["source_file"] ? "#{short_path(q["source_file"])}:#{q["source_line"]}" : ""
-        puts format("%-6s %-10s %-60s %-30s",
-          q["id"],
-          "#{q["duration_ms"]}ms",
-          truncate(q["sql_text"], 57) + n1,
-          truncate(source, 30))
+        source = q["source_file"] ? "#{short_path(q["source_file"])}:#{q["source_line"]}" : "unknown"
+
+        puts "Query ##{q["id"]} — #{q["duration_ms"]}ms#{n1}"
+        puts wrap("  SQL: #{q["sql_text"]}", terminal_width, "       ")
+        puts "  Source: #{source}"
       end
+
+      puts "\n#{results.size} quer#{results.size == 1 ? 'y' : 'ies'} shown"
     end
 
     desc "requests", "List slow requests"
@@ -39,14 +41,16 @@ module Tailscope
         return
       end
 
-      puts format("%-6s %-7s %-40s %-6s %-10s %-20s", "ID", "Method", "Path", "Status", "Duration", "Controller#Action")
-      puts "-" * 95
-      results.each do |r|
+      results.each_with_index do |r, idx|
+        puts "" if idx > 0
         ca = [r["controller"], r["action"]].compact.join("#")
-        puts format("%-6s %-7s %-40s %-6s %-10s %-20s",
-          r["id"], r["method"], truncate(r["path"], 40),
-          r["status"], "#{r["duration_ms"]}ms", truncate(ca, 20))
+
+        puts "Request ##{r["id"]} — #{r["method"]} #{r["status"]} — #{r["duration_ms"]}ms"
+        puts "  Path: #{r["path"]}"
+        puts "  Controller: #{ca}" unless ca.empty?
       end
+
+      puts "\n#{results.size} request#{results.size == 1 ? '' : 's'} shown"
     end
 
     desc "errors", "List captured exceptions"
@@ -59,14 +63,116 @@ module Tailscope
         return
       end
 
-      puts format("%-6s %-30s %-50s %-30s", "ID", "Exception", "Message", "Source")
-      puts "-" * 120
-      results.each do |e|
-        source = e["source_file"] ? "#{short_path(e["source_file"])}:#{e["source_line"]}" : ""
-        puts format("%-6s %-30s %-50s %-30s",
-          e["id"], truncate(e["exception_class"], 30),
-          truncate(e["message"], 50), truncate(source, 30))
+      terminal_width = (ENV["COLUMNS"] || 120).to_i
+
+      results.each_with_index do |e, idx|
+        puts "" if idx > 0
+        source = e["source_file"] ? "#{short_path(e["source_file"])}:#{e["source_line"]}" : "unknown"
+
+        puts colorize_severity(:critical, "Error ##{e["id"]} — #{e["exception_class"]}")
+        puts wrap("  Message: #{e["message"]}", terminal_width, "           ") if e["message"]
+        puts "  Source: #{source}"
       end
+
+      puts "\n#{results.size} error#{results.size == 1 ? '' : 's'} shown"
+    end
+
+    desc "issues", "List code issues"
+    option :severity, type: :string, aliases: "-s", desc: "Filter by severity (critical, warning, info)"
+    option :type, type: :string, aliases: "-t", desc: "Filter by type (n_plus_one, slow_query, slow_request, code_smell)"
+    option :ignored, type: :boolean, aliases: "-i", desc: "Show ignored issues"
+    option :limit, type: :numeric, default: 20, aliases: "-l"
+    def issues
+      setup_db!
+      all_issues = IssueBuilder.build_all
+      ignored_fps = Storage.ignored_fingerprints
+
+      issues = if options[:ignored]
+        all_issues.select { |i| ignored_fps.include?(i.fingerprint) }
+      else
+        all_issues.reject { |i| ignored_fps.include?(i.fingerprint) }
+      end
+
+      if options[:severity]
+        sev = options[:severity].to_sym
+        issues = issues.select { |i| i.severity == sev }
+      end
+
+      if options[:type]
+        type = options[:type].to_sym
+        issues = issues.select { |i| i.type == type }
+      end
+
+      issues = issues.first(options[:limit])
+
+      if issues.empty?
+        puts "No issues found."
+        return
+      end
+
+      terminal_width = (ENV["COLUMNS"] || 120).to_i
+
+      issues.each_with_index do |issue, idx|
+        puts "" if idx > 0
+        puts colorize_severity(issue.severity, "#{issue.severity.to_s.upcase.ljust(8)} #{issue.title}")
+        puts wrap("  #{issue.description}", terminal_width, "  ")
+        puts "  Source: #{short_path(issue.source_file)}:#{issue.source_line}" if issue.source_file
+        puts "  Fingerprint: #{issue.fingerprint}"
+        puts "  Occurrences: #{issue.occurrences}"
+        if issue.suggested_fix && !issue.suggested_fix.empty?
+          puts "  Fix:"
+          issue.suggested_fix.lines.each { |line| puts "    #{line}" }
+        end
+      end
+
+      puts "\n#{issues.size} issue(s) shown"
+    end
+
+    desc "ignore FINGERPRINT", "Ignore an issue by fingerprint"
+    def ignore(fingerprint)
+      setup_db!
+      all_issues = IssueBuilder.build_all
+      issue = all_issues.find { |i| i.fingerprint == fingerprint }
+
+      unless issue
+        puts "Issue not found: #{fingerprint}"
+        return
+      end
+
+      Storage.ignore_issue(
+        fingerprint: fingerprint,
+        title: issue.title,
+        issue_type: issue.type.to_s
+      )
+      puts "Ignored: #{issue.title}"
+    end
+
+    desc "unignore FINGERPRINT", "Unignore an issue by fingerprint"
+    def unignore(fingerprint)
+      setup_db!
+      Storage.unignore_issue(fingerprint)
+      puts "Unignored: #{fingerprint}"
+    end
+
+    desc "jobs", "List background jobs"
+    option :limit, type: :numeric, default: 20, aliases: "-l"
+    def jobs
+      setup_db!
+      results = Storage.jobs(limit: options[:limit])
+      if results.empty?
+        puts "No jobs recorded."
+        return
+      end
+
+      results.each_with_index do |j, idx|
+        puts "" if idx > 0
+        puts "Job ##{j["id"]} — #{j["job_class"]} — #{j["status"]}"
+        puts "  Queue: #{j["queue_name"]}"
+        puts "  Duration: #{j["duration_ms"]}ms" if j["duration_ms"]
+        puts "  Job ID: #{j["job_id"]}"
+      end
+
+      puts "\n#{results.size} job#{results.size == 1 ? '' : 's'} shown"
     end
 
     desc "stats", "Show summary statistics"
@@ -87,6 +193,7 @@ module Tailscope
     option :interval, type: :numeric, default: 2, aliases: "-i"
     def tail
       setup_db!
+      terminal_width = (ENV["COLUMNS"] || 120).to_i
       puts "Tailscope — live tail (Ctrl+C to stop)"
       puts "-" * 60
       last_id = { query: 0, request: 0, error: 0 }
@@ -100,7 +207,9 @@ module Tailscope
 
           last_id[type.to_sym] = id.to_i
           time = e["recorded_at"]
-          puts "[#{time}] #{type.upcase.ljust(7)} #{e["duration_ms"]}ms  #{truncate(e["summary"], 80)}"
+          summary_width = terminal_width - 40 # Leave room for timestamp and type
+          summary = wrap(e["summary"] || "", summary_width, "").lines.first&.strip || ""
+          puts "[#{time}] #{type.upcase.ljust(7)} #{e["duration_ms"]}ms  #{summary}"
         end
         sleep options[:interval]
       end
@@ -149,6 +258,41 @@ module Tailscope
     def truncate(str, len)
       return "" unless str
       str.length > len ? str[0...len] + "..." : str
+    end
+
+    def wrap(text, width, indent = "")
+      return "" unless text
+      text = text.to_s.strip
+      return text if text.length <= width
+
+      lines = []
+      words = text.split(/\s+/)
+      current_line = indent.dup
+
+      words.each do |word|
+        if (current_line + word).length <= width
+          current_line << (current_line == indent ? "" : " ") << word
+        else
+          lines << current_line unless current_line == indent
+          current_line = indent + word
+        end
+      end
+
+      lines << current_line unless current_line == indent
+      lines.join("\n")
+    end
+
+    def colorize_severity(severity, text)
+      return text unless $stdout.tty?
+
+      color = case severity
+      when :critical then "\e[31m" # red
+      when :warning then "\e[33m"  # yellow
+      when :info then "\e[36m"     # cyan
+      else "\e[0m"
+      end
+
+      "#{color}#{text}\e[0m"
     end
 
     def short_path(path)
