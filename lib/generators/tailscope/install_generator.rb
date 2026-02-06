@@ -15,6 +15,16 @@ module Tailscope
         route 'mount Tailscope::Engine, at: "/tailscope"'
       end
 
+      def update_gitignore
+        gitignore_path = File.join(destination_root, ".gitignore")
+        return unless File.exist?(gitignore_path)
+
+        content = File.read(gitignore_path)
+        return if content.include?("tailscope.sqlite3")
+
+        append_to_file ".gitignore", "\n# Tailscope\ndb/tailscope.sqlite3\n"
+      end
+
       def install_frontend_dependencies
         say "Installing frontend dependencies...", :blue
         client_path = Gem.loaded_specs["tailscope"].full_gem_path + "/client"

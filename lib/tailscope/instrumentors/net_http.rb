@@ -26,4 +26,6 @@ module Tailscope
   end
 end
 
-Net::HTTP.prepend(Tailscope::Instrumentors::NetHttp)
+if defined?(Net::HTTP)
+  Net::HTTP.prepend(Tailscope::Instrumentors::NetHttp)
+end

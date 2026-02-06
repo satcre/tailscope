@@ -5,6 +5,7 @@ Tailscope::Engine.routes.draw do
     resources :issues, only: [:index]
     post "issues/:fingerprint/ignore", to: "issues#ignore", as: :ignore_issue
     post "issues/:fingerprint/unignore", to: "issues#unignore", as: :unignore_issue
+    post "issues/bulk_ignore", to: "issues#bulk_ignore", as: :bulk_ignore_issues
 
     resources :queries, only: [:index, :show]
     delete "queries", to: "queries#destroy_all"

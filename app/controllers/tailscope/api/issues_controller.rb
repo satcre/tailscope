@@ -66,6 +66,28 @@ module Tailscope
         render json: { ok: true }
       end
 
+      def bulk_ignore
+        fingerprints = params[:fingerprints]
+        return render(json: { error: "fingerprints required" }, status: :bad_request) if !fingerprints.is_a?(Array) || fingerprints.empty?
+
+        all_issues = IssueBuilder.build_all
+        count = 0
+
+        fingerprints.each do |fingerprint|
+          issue = all_issues.find { |i| i.fingerprint == fingerprint }
+          next unless issue
+
+          Storage.ignore_issue(
+            fingerprint: fingerprint,
+            title: issue.title,
+            issue_type: issue.type.to_s
+          )
+          count += 1
+        end
+
+        render json: { ok: true, count: count }
+      end
+
       private
 
       def serialize_issue(issue)

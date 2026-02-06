@@ -128,9 +128,13 @@ module Tailscope
   end
 end
 
-ActiveSupport::Callbacks::Filters::Before.prepend(Tailscope::Instrumentors::CallbacksBefore)
-ActiveSupport::Callbacks::Filters::After.prepend(Tailscope::Instrumentors::CallbacksAfter)
+if defined?(ActiveSupport::Callbacks::Filters::Before)
+  ActiveSupport::Callbacks::Filters::Before.prepend(Tailscope::Instrumentors::CallbacksBefore)
+  ActiveSupport::Callbacks::Filters::After.prepend(Tailscope::Instrumentors::CallbacksAfter)
+end
 
-ActiveSupport.on_load(:action_controller) do
-  prepend Tailscope::Instrumentors::ActionMethod
+if defined?(ActiveSupport)
+  ActiveSupport.on_load(:action_controller) do
+    prepend Tailscope::Instrumentors::ActionMethod
+  end
 end

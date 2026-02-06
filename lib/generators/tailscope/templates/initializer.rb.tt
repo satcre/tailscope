@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 Tailscope.configure do |config|
-  # Enable/disable Tailscope (defaults to development only)
-  config.enabled = Rails.env.development?
+  # Enable/disable Tailscope (defaults to development and test environments)
+  config.enabled = Rails.env.development? || Rails.env.test?
 
   # Minimum query duration to record (milliseconds)
   config.slow_query_threshold_ms = 100

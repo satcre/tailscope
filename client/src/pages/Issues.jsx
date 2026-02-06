@@ -22,6 +22,8 @@ export default function Issues() {
   const [loading, setLoading] = React.useState(true)
   const [rescanning, setRescanning] = React.useState(false)
   const [selectedIssue, setSelectedIssue] = React.useState(null)
+  const [selectedFingerprints, setSelectedFingerprints] = React.useState(new Set())
+  const [bulkIgnoring, setBulkIgnoring] = React.useState(false)
 
   const loadData = React.useCallback((isRescan = false) => {
     if (isRescan) {
@@ -56,6 +58,43 @@ export default function Issues() {
 
   const handleRescan = () => {
     loadData(true)
+  }
+
+  const toggleSelection = (fingerprint) => {
+    setSelectedFingerprints((prev) => {
+      const next = new Set(prev)
+      if (next.has(fingerprint)) {
+        next.delete(fingerprint)
+      } else {
+        next.add(fingerprint)
+      }
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedFingerprints.size === issues.length) {
+      setSelectedFingerprints(new Set())
+    } else {
+      setSelectedFingerprints(new Set(issues.map((i) => i.fingerprint)))
+    }
+  }
+
+  const handleBulkIgnore = async () => {
+    if (selectedFingerprints.size === 0) return
+    setBulkIgnoring(true)
+    try {
+      await api.post('/issues/bulk_ignore', {
+        fingerprints: Array.from(selectedFingerprints)
+      })
+      setSelectedFingerprints(new Set())
+      loadData()
+    } catch (e) {
+      console.error('Bulk ignore failed:', e)
+      alert('Failed to ignore selected issues')
+    } finally {
+      setBulkIgnoring(false)
+    }
   }
 
   const changePage = (newPage) => {
@@ -139,9 +178,46 @@ export default function Issues() {
         </button>
       </div>
 
+      {selectedFingerprints.size > 0 && !isIgnored && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-medium text-blue-900">
+              {selectedFingerprints.size} issue{selectedFingerprints.size !== 1 ? 's' : ''} selected
+            </span>
+            <button
+              onClick={handleBulkIgnore}
+              disabled={bulkIgnoring}
+              className="px-3 py-1.5 text-sm rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              {bulkIgnoring ? 'Ignoring...' : 'Ignore Selected'}
+            </button>
+          </div>
+          <button
+            onClick={() => setSelectedFingerprints(new Set())}
+            className="text-sm text-blue-600 hover:text-blue-800"
+          >
+            Clear Selection
+          </button>
+        </div>
+      )}
+
       {issues.length === 0 && (
         <div className="bg-white rounded-lg shadow p-8 text-center text-gray-400">
           {isIgnored ? 'No ignored issues. Issues you ignore will appear here.' : 'No issues detected. Browse your app to generate traffic.'}
+        </div>
+      )}
+
+      {issues.length > 0 && !isIgnored && (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-2 flex items-center gap-3">
+          <input
+            type="checkbox"
+            checked={selectedFingerprints.size === issues.length}
+            onChange={toggleSelectAll}
+            className="w-4 h-4 rounded border-gray-300"
+          />
+          <span className="text-sm text-gray-600 font-medium">
+            Select All
+          </span>
         </div>
       )}
 
@@ -149,9 +225,25 @@ export default function Issues() {
         {issues.map((issue) => (
           <div
             key={issue.fingerprint}
-            onClick={() => setSelectedIssue(issue)}
-            className="bg-white rounded-lg shadow p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+            className="bg-white rounded-lg shadow p-4 hover:bg-gray-50 transition-colors"
           >
+            <div className="flex items-start gap-3">
+              {!isIgnored && (
+                <input
+                  type="checkbox"
+                  checked={selectedFingerprints.has(issue.fingerprint)}
+                  onChange={(e) => {
+                    e.stopPropagation()
+                    toggleSelection(issue.fingerprint)
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="mt-1 w-4 h-4 rounded border-gray-300 flex-shrink-0"
+                />
+              )}
+              <div
+                className="flex-1 cursor-pointer"
+                onClick={() => setSelectedIssue(issue)}
+              >
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-2 flex-wrap">
                 <SeverityBadge severity={issue.severity} />
@@ -181,6 +273,8 @@ export default function Issues() {
                   <TimeAgo timestamp={issue.latest_at} />
                 </span>
               )}
+            </div>
+              </div>
             </div>
           </div>
         ))}

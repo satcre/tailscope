@@ -29,6 +29,8 @@ module Tailscope
   end
 end
 
-ActiveSupport.on_load(:active_job) do
-  include Tailscope::Instrumentors::ActiveJobTracking
+if defined?(ActiveSupport)
+  ActiveSupport.on_load(:active_job) do
+    include Tailscope::Instrumentors::ActiveJobTracking
+  end
 end

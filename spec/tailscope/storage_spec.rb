@@ -100,6 +100,8 @@ RSpec.describe Tailscope::Storage do
     end
 
     it "does not error on duplicate ignore" do
+      # Clear any leftover data
+      Tailscope::Database.connection.execute("DELETE FROM tailscope_ignored_issues")
       described_class.ignore_issue(fingerprint: "abc123", title: "Test", issue_type: "code_smell")
       expect {
         described_class.ignore_issue(fingerprint: "abc123", title: "Test", issue_type: "code_smell")

@@ -139,4 +139,43 @@ RSpec.describe "Issues API", type: :request do
       expect(Tailscope::Storage.ignored_fingerprints).not_to include("abc123")
     end
   end
+
+  describe "POST /tailscope/api/issues/bulk_ignore" do
+    it "marks multiple issues as ignored" do
+      post "/tailscope/api/issues/bulk_ignore", params: { fingerprints: ["abc123", "def456"] }
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body["ok"]).to eq(true)
+      expect(body["count"]).to eq(2)
+      expect(Tailscope::Storage.ignored_fingerprints).to include("abc123")
+      expect(Tailscope::Storage.ignored_fingerprints).to include("def456")
+    end
+
+    it "returns 400 when fingerprints param is missing" do
+      post "/tailscope/api/issues/bulk_ignore", params: {}
+
+      expect(response).to have_http_status(:bad_request)
+      body = JSON.parse(response.body)
+      expect(body["error"]).to eq("fingerprints required")
+    end
+
+    it "ignores only existing issues" do
+      post "/tailscope/api/issues/bulk_ignore", params: { fingerprints: ["abc123", "nonexistent"] }
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body["count"]).to eq(1)
+      expect(Tailscope::Storage.ignored_fingerprints).to include("abc123")
+      expect(Tailscope::Storage.ignored_fingerprints).not_to include("nonexistent")
+    end
+
+    it "handles empty fingerprints array" do
+      post "/tailscope/api/issues/bulk_ignore", params: { fingerprints: [] }
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body["count"]).to eq(0)
+    end
+  end
 end
