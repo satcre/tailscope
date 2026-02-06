@@ -17,6 +17,9 @@ module Tailscope
         filter = params[:severity]&.to_sym
         issues = issues.select { |i| i.severity == filter } if filter.present? && tab != :ignored
 
+        type_filter = params[:type]&.to_sym
+        issues = issues.select { |i| i.type == type_filter } if type_filter.present? && tab != :ignored
+
         ignored_count = all_issues.count { |i| ignored_fps.include?(i.fingerprint) }
 
         # Pagination

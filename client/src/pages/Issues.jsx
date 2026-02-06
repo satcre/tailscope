@@ -17,6 +17,7 @@ export default function Issues() {
   const [searchParams, setSearchParams] = useSearchParams()
   const tab = searchParams.get('tab') || 'active'
   const filter = searchParams.get('severity')
+  const typeFilter = searchParams.get('type')
   const page = parseInt(searchParams.get('page') || '1', 10)
   const [data, setData] = React.useState(null)
   const [loading, setLoading] = React.useState(true)
@@ -34,13 +35,14 @@ export default function Issues() {
     const p = new URLSearchParams()
     if (tab === 'ignored') p.set('tab', 'ignored')
     if (filter) p.set('severity', filter)
+    if (typeFilter) p.set('type', typeFilter)
     p.set('page', page.toString())
     p.set('per_page', '20')
     api.get(`/issues?${p}`).then(setData).finally(() => {
       setLoading(false)
       setRescanning(false)
     })
-  }, [tab, filter, page])
+  }, [tab, filter, typeFilter, page])
 
   React.useEffect(() => { loadData() }, [loadData])
 
@@ -101,6 +103,7 @@ export default function Issues() {
     const params = {}
     if (tab === 'ignored') params.tab = 'ignored'
     if (filter) params.severity = filter
+    if (typeFilter) params.type = typeFilter
     if (newPage > 1) params.page = newPage.toString()
     setSearchParams(params)
   }
@@ -151,31 +154,61 @@ export default function Issues() {
         </div>
       )}
 
-      <div className="flex gap-2 mb-6 flex-wrap">
-        <button
-          onClick={() => setSearchParams({})}
-          className={`px-3 py-1 text-sm rounded ${!filter && !isIgnored ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700'}`}
-        >
-          All ({total_count})
-        </button>
-        {!isIgnored && ['critical', 'warning', 'info'].map((sev) => {
-          const colors = { critical: 'bg-red-600', warning: 'bg-yellow-600', info: 'bg-blue-600' }
-          return (
-            <button
-              key={sev}
-              onClick={() => setSearchParams({ severity: sev })}
-              className={`px-3 py-1 text-sm rounded ${filter === sev ? `${colors[sev]} text-white` : 'bg-gray-200 text-gray-700'}`}
-            >
-              {sev.charAt(0).toUpperCase() + sev.slice(1)} ({counts[sev]})
-            </button>
-          )
-        })}
-        <button
-          onClick={() => setSearchParams({ tab: 'ignored' })}
-          className={`px-3 py-1 text-sm rounded ${isIgnored ? 'bg-gray-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-        >
-          Ignored ({ignored_count})
-        </button>
+      <div className="mb-6 space-y-3">
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => setSearchParams({})}
+            className={`px-3 py-1 text-sm rounded ${!filter && !isIgnored && !typeFilter ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700'}`}
+          >
+            All ({total_count})
+          </button>
+          {!isIgnored && ['critical', 'warning', 'info'].map((sev) => {
+            const colors = { critical: 'bg-red-600', warning: 'bg-yellow-600', info: 'bg-blue-600' }
+            return (
+              <button
+                key={sev}
+                onClick={() => setSearchParams({ severity: sev })}
+                className={`px-3 py-1 text-sm rounded ${filter === sev ? `${colors[sev]} text-white` : 'bg-gray-200 text-gray-700'}`}
+              >
+                {sev.charAt(0).toUpperCase() + sev.slice(1)} ({counts[sev]})
+              </button>
+            )
+          })}
+          <button
+            onClick={() => setSearchParams({ tab: 'ignored' })}
+            className={`px-3 py-1 text-sm rounded ${isIgnored ? 'bg-gray-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+          >
+            Ignored ({ignored_count})
+          </button>
+        </div>
+
+        {!isIgnored && (
+          <div className="flex gap-2 flex-wrap items-center">
+            <span className="text-sm text-gray-500 font-medium">Filter by type:</span>
+            {Object.entries(typeBadges).map(([type, badge]) => (
+              <button
+                key={type}
+                onClick={() => {
+                  const params = {}
+                  if (filter) params.severity = filter
+                  if (typeFilter === type) {
+                    // Clicking same type clears it
+                  } else {
+                    params.type = type
+                  }
+                  setSearchParams(params)
+                }}
+                className={`px-3 py-1 text-sm rounded ${
+                  typeFilter === type
+                    ? badge.cls
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                {badge.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {selectedFingerprints.size > 0 && !isIgnored && (
